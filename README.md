@@ -10,3 +10,14 @@ motor.motors_off()                    # stop both — always end with this
 ```
 
 Motor keeps running at the last speed until changed or turned off.
+
+# Servo cheat sheet
+
+```python
+import servo
+
+servo.set_servo1(135)   # angle 0-270 (135 = centre)
+servo.servo1_off()      # go limp
+```
+
+Servo holds its angle until changed or turned off.
