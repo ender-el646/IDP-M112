@@ -1,7 +1,7 @@
-from test_led import test_led
+"""from test_led import test_led
 from test_led_pwm import test_led_pwm
 from test_input import test_input_poll
-from test_motor import test_motor3
+import motor
 from test_linear_actuator import test_actuator1
 from test_tcs3472 import test_tcs3472
 from test_vl53l0x import test_vl53l0x
@@ -9,9 +9,9 @@ from test_mfrc522 import test_mfrc522
 from test_TMF8x01_get_distance import test_TMF8x01_get_distance
 from test_STU_22L_IO_Mode import test_STU_22L_IO_Mode
 from test_STU_22L_UART import test_STU_22L_UART
-from test_tiny_code_reader import test_tiny_code_reader
+from test_tiny_code_reader import test_tiny_code_reader"""
 
-print("Welcome to main.py!")
+print("Start Running")
 
 # Uncomment the test to run
 # test_led()
@@ -26,5 +26,5 @@ print("Welcome to main.py!")
 # test_STU_22L_IO_Mode()
 # test_STU_22L_UART()
 # test_tiny_code_reader()
-
+motor.set_motor3
 print("main.py Done!")
