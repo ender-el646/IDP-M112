@@ -42,12 +42,22 @@ line_follow.follow_line(10)                   # follow for 10 seconds at speed 1
 line_follow.follow_line(10, base_speed=60)    # slower
 ```
 
-- `0,0,0,0`: on the line, so both motors run at base speed
-- `0,1,0,0`: motor 3 slows by 10 until back on the line
-- `0,0,1,0`: motor 4 slows by 10 until back on the line
-- Outer sensors (turning points) are ignored for now
+| Sensors | Junction | Correction |
+|---|---|---|
+| `0000` | | none |
+| `0001` | | motor 4 large |
+| `0010` | | motor 4 small |
+| `0011` | right turn | none |
+| `0100` | | motor 3 small |
+| `0111` | right turn | motor 4 small |
+| `1000` | | motor 3 large |
+| `1001` | crossroad | none |
+| `1100` | left turn | none |
+| `1110` | left turn | motor 3 small |
+| `1111` | crossroad | none |
+| anything else | | ignored (none) |
 
-Motors turn off when the time is up. Change the slow-down amount with `CORRECTION` in `line_follow.py`.
+A correction slows that motor (small = 20, large = 40) until the reading changes. Junctions are printed when first seen. Edit `SMALL`, `LARGE` and the `ACTIONS` table in `line_follow.py`. Motors turn off when the time is up.
 
 # Sleep cheat sheet
 

@@ -29,10 +29,18 @@ print("Start Running")
 # test_STU_22L_IO_Mode()
 # test_STU_22L_UART()
 # test_tiny_code_reader()
-'''motor.set_motor3(motor.FORWARD, 100)
-motor.set_motor4(motor.FORWARD, 100)
-sleep(1.5)
+
+
+# 1st turning point: stop for 1 s, then go straight
+if line_follow.follow_to_junction():
+    sleep(1)
+
+    # 2nd turning point: turn left
+    if line_follow.follow_to_junction():
+        line_follow.turn_left()
+        if line_follow.follow_to_junction():  
+            sleep(1)
+            line_follow.left180()
+
 motor.motors_off()
-line_sensor.print_sensors(30)'''
-line_follow.follow_line(10)
 print("main.py Done!")
