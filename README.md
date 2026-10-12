@@ -57,7 +57,17 @@ line_follow.follow_line(10, base_speed=60)    # slower
 | `1111` | crossroad | none |
 | anything else | | ignored (none) |
 
-A correction slows that motor (small = 20, large = 40) until the reading changes. Junctions are printed when first seen. Edit `SMALL`, `LARGE` and the `ACTIONS` table in `line_follow.py`. Motors turn off when the time is up.
+A correction slows that motor (small = 30, large = 50) until the reading changes. Junctions are printed when first seen. Edit `SMALL`, `LARGE` and the `ACTIONS` table in `line_follow.py`. Motors turn off when the time is up.
+
+## Junctions and turns
+
+```python
+line_follow.follow_to_junction()   # follow until the next junction, stop, return its name
+line_follow.turn_left()            # forward 0.8 s, then spin left 0.82 s (speed 80)
+line_follow.left180()              # spin left 1.5 s to turn around (speed 80)
+```
+
+`follow_to_junction()` has no timeout: it keeps going until it finds a junction. If it starts on a junction, it drives past that one first. Motor 3 is the left motor and motor 4 is the right. Tune the turns by changing the sleep times.
 
 # Sleep cheat sheet
 

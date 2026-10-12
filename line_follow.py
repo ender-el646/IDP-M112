@@ -49,12 +49,11 @@ def follow_line(duration=10, base_speed=100, interval=0.01):
     motor.motors_off()
 
 
-def follow_to_junction(base_speed=100, timeout=30, interval=0.01):
+def follow_to_junction(base_speed=100, interval=0.01):
     # Follow the line until the next junction and return its name, leaving the motors running.
-    # If already on a junction, first drives past it. Returns None (motors off) on timeout.
+    # If already on a junction, first drives past it.
     leaving = True
-    start = ticks_ms()
-    while ticks_diff(ticks_ms(), start) < timeout * 1000:
+    while True:
         junction, cut3, cut4 = read_action()
         if junction is STRAIGHT:
             leaving = False
@@ -66,9 +65,6 @@ def follow_to_junction(base_speed=100, timeout=30, interval=0.01):
         motor.set_motor3(motor.FORWARD, base_speed - cut3)
         motor.set_motor4(motor.FORWARD, base_speed - cut4)
         sleep(interval)
-
-    motor.motors_off()
-    return None
 
 
 def turn_left(speed=80):
