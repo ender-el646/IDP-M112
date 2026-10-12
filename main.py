@@ -11,6 +11,8 @@ from test_STU_22L_IO_Mode import test_STU_22L_IO_Mode
 from test_STU_22L_UART import test_STU_22L_UART
 from test_tiny_code_reader import test_tiny_code_reader'''
 import motor
+import line_sensor
+import line_follow
 from utime import sleep, sleep_ms
 print("Start Running")
 
@@ -27,8 +29,10 @@ print("Start Running")
 # test_STU_22L_IO_Mode()
 # test_STU_22L_UART()
 # test_tiny_code_reader()
-motor.set_motor3(motor.FORWARD, 95)
+'''motor.set_motor3(motor.FORWARD, 100)
 motor.set_motor4(motor.FORWARD, 100)
-sleep(1.5) 
-motor.motors_off()         
+sleep(1.5)
+motor.motors_off()
+line_sensor.print_sensors(30)'''
+line_follow.follow_line(10)
 print("main.py Done!")
