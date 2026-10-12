@@ -21,3 +21,14 @@ servo.servo1_off()      # go limp
 ```
 
 Servo holds its angle until changed or turned off.
+
+# Sleep cheat sheet
+
+```python
+from utime import sleep, sleep_ms
+
+sleep(2)        # pause 2 seconds (floats OK: sleep(0.5))
+sleep_ms(100)   # pause 100 milliseconds
+```
+
+Motors and servos keep doing their last command while sleeping. Use sleep to set how long an action runs.
