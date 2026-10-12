@@ -32,15 +32,16 @@ print("Start Running")
 
 
 # 1st turning point: stop for 1 s, then go straight
-if line_follow.follow_to_junction():
-    sleep(1)
+line_follow.follow_to_junction()
+sleep(1)
 
-    # 2nd turning point: turn left
-    if line_follow.follow_to_junction():
-        line_follow.turn_left()
-        if line_follow.follow_to_junction():  
-            sleep(1)
-            line_follow.left180()
+# 2nd turning point: turn left
+line_follow.follow_to_junction()
+line_follow.turn_left()
+
+line_follow.follow_to_junction()
+sleep(1)
+line_follow.left180()
 
 motor.motors_off()
 print("main.py Done!")
