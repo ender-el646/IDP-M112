@@ -1,8 +1,8 @@
 from machine import Pin, PWM
 from utime import sleep
 
-FORWARD = 0
-REVERSE = 1
+FORWARD = 1
+REVERSE = 0
 
 
 class Motor:
@@ -16,7 +16,7 @@ class Motor:
         self.pwm.duty_u16(0)
 
     def set(self, direction=FORWARD, speed=100):
-        # direction: FORWARD (0) or REVERSE (1); speed: 0-100 (%)
+        # direction: FORWARD (1) or REVERSE (0); speed: 0-100 (%)
         speed = max(0, min(100, speed))
         self.mDir.value(direction)
         self.pwm.duty_u16(int(65535 * speed / 100))
