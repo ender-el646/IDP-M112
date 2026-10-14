@@ -20,7 +20,7 @@ def test_vl53l0x():
         vl53l0.start()
 
         # Read ten samples
-        for _ in range(10):
+        for _ in range(50):
             distance = vl53l0.read()
             print(f"Distance = {distance}mm")  # Check calibration!
             sleep(0.5)
