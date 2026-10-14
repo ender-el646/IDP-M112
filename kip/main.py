@@ -83,7 +83,7 @@ while time.perf_counter() - START_TIME < FINISH_TIME:
                 replace(state.goal, Goal.RETURN_TO_INITIAL)
                 break
 
-    if state.goal == Goal.PLACE_BOX_UP:
+    if state.goal == Goal.PLACE_BOX_DOWN:
 
         PLACES = []
 
