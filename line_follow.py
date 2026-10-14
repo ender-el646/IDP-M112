@@ -9,20 +9,23 @@ STRAIGHT = None
 RIGHT_TURN = "right turn"
 LEFT_TURN = "left turn"
 CROSSROAD = "crossroad"
+ENDING = "ending"
 
 # Sensor reading (jumper 24, 25, 26, 27) -> (junction, slow motor 3 by, slow motor 4 by)
-# Readings not listed are ignored (go straight).
+# Readings not listed (1,0,0,1 / 1,0,1,1 / 1,1,0,1) are ignored (go straight).
 ACTIONS = {
-    (0, 0, 0, 0): (STRAIGHT, 0, 0),
+    (0, 0, 0, 0): (ENDING, 0, 0),
     (0, 0, 0, 1): (STRAIGHT, 0, LARGE),
     (0, 0, 1, 0): (STRAIGHT, 0, SMALL),
     (0, 0, 1, 1): (RIGHT_TURN, 0, 0),
     (0, 1, 0, 0): (STRAIGHT, SMALL, 0),
-    (0, 1, 1, 1): (RIGHT_TURN, 0, SMALL),
+    (0, 1, 0, 1): (RIGHT_TURN, 0, 0),
+    (0, 1, 1, 0): (STRAIGHT, 0, 0),
+    (0, 1, 1, 1): (RIGHT_TURN, 0, 0),
     (1, 0, 0, 0): (STRAIGHT, LARGE, 0),
-    (1, 0, 0, 1): (CROSSROAD, 0, 0),
+    (1, 0, 1, 0): (LEFT_TURN, 0, 0),
     (1, 1, 0, 0): (LEFT_TURN, 0, 0),
-    (1, 1, 1, 0): (LEFT_TURN, SMALL, 0),
+    (1, 1, 1, 0): (LEFT_TURN, 0, 0),
     (1, 1, 1, 1): (CROSSROAD, 0, 0),
 }
 
