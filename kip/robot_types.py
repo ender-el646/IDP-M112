@@ -13,6 +13,10 @@ class Goal(Enum):
     PLACE_BOX_DOWN = 3
     RETURN_TO_INITIAL = 4
 
+class Side(Enum):
+    RIGHT = 1
+    LEFT = 2
+
 @dataclass(frozen=True)
 class State:
     position: int = 0

@@ -1,6 +1,6 @@
 from utime import sleep
 import time
-from robot_types import Section, Goal, State, Position
+from robot_types import Section, Goal, State, Position, Side
 from dataclasses import replace
 from planning_machine import plan
 from execution_machine import move, pick_up, place_lower, place_upper
@@ -43,7 +43,33 @@ UP_PLACES = [Position(Position=1, Section=Section.UP),
 
 state = State()
 
+position1 = Position(Position=1, Section=Section.RIGHT)
+position2 = Position(Position=3, Section=Section.RIGHT)
+position3 = Position(Position=0, Section=Section.INITIAL)
+
 while time.perf_counter() - START_TIME < FINISH_TIME:
+
+    move(state, position1)
+    
+    replace(state.position, position1.position)
+    replace(state.section, position1.section)
+
+    pick_up(state)
+
+    move(state, position2)
+
+    replace(state.position, position2.position)
+    replace(state.section, position2.section)
+
+    place_lower(state)
+
+    move(state, position3)
+
+    replace(state.position, position3.position)
+    replace(state.section, position3.section)
+    
+
+    '''
 
     if state.goal == Goal.GET_BOX:
 
@@ -115,5 +141,7 @@ while time.perf_counter() - START_TIME < FINISH_TIME:
         else:
             move(state, INITIAL_PLACE)
             break
+    
+    '''
 
     
