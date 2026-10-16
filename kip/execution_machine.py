@@ -1,5 +1,4 @@
 from robot_types import Section, Goal, State, Position, Side
-from dataclasses import replace
 import motor
 from utime import sleep, ticks_ms, ticks_diff
 import line_sensor
@@ -8,149 +7,184 @@ import line_sensor
 FORWARD = 1
 REVERSE = 0
 
-#debug constants
+# debug constants
 WAIT_TIME = 0.2
 
-#line follow constants
+# line follow constants
 LINE_FOLLOW_INTERVAL = 0.05
 SMALL_CORRECTION = 20
 LARGE_CORRECTION = 40
 LINE_FOLLOW_SPEED = 100
 
+REVERSE_FACTOR = 0.5
+LINE_FOLLOW_REVERSE_SPEED = 100
+
 LINE_LOST_SAMPLES = 2
 
-#need to calibrate
+# need to calibrate
 
-#maneuvers 
+# maneuvers
 SENSORS_TO_AXIS_DURATION = 0.6
-ROTATION_90_DURATION = 0.81
+ROTATION_90_DURATION = 0.58     
+
 
 def wait():
     sleep(WAIT_TIME)
 
-def opposite(side: Side):
+
+def opposite(side):
     return Side.LEFT if side == Side.RIGHT else Side.RIGHT
 
-def section_side(section: Section):
+
+def section_side(section):
     return Side.RIGHT if section == Section.RIGHT else Side.LEFT
+
 
 def correction(sensors):
     cut_left = 0
     cut_right = 0
- 
-    if sensors == [1, 0, 0, 0]:         
+
+    if sensors == [1, 0, 0, 0]:
         cut_left = LARGE_CORRECTION
-    elif sensors == [0, 0, 0, 1]:       
+    elif sensors == [0, 0, 0, 1]:
         cut_right = LARGE_CORRECTION
-    elif sensors[1] == 0 and sensors[2] == 1:   
+    elif sensors[1] == 0 and sensors[2] == 1:
         cut_right = SMALL_CORRECTION
-    elif sensors[2] == 0 and sensors[1] == 1:  
+    elif sensors[2] == 0 and sensors[1] == 1:
         cut_left = SMALL_CORRECTION
- 
+
     return cut_left, cut_right
+
+
+def u_turn():
+    wait()
+    follow_straight_line(SENSORS_TO_AXIS_DURATION)  # put axle on the junction
+    wait()
+    rotate_bot(Side.RIGHT)
+    wait()
+    rotate_bot(Side.RIGHT)
+    wait()
+    follow_straight_line(SENSORS_TO_AXIS_DURATION, REVERSE)
+    wait()
 
 def drive_on_line(direction, sensors):
     cut_left, cut_right = correction(sensors)
- 
+
+    speed = LINE_FOLLOW_SPEED
+
     if direction == REVERSE:
         cut_left, cut_right = cut_right, cut_left
- 
-    motor.set_motor(Side.RIGHT, direction, LINE_FOLLOW_SPEED - cut_right)
-    motor.set_motor(Side.LEFT, direction, LINE_FOLLOW_SPEED - cut_left)
- 
+
+        cut_left *= REVERSE_FACTOR
+        cut_right *= REVERSE_FACTOR
+
+        speed = LINE_FOLLOW_REVERSE_SPEED
+
+    motor.set_motor(Side.RIGHT, direction, speed - cut_right)
+    motor.set_motor(Side.LEFT, direction, speed - cut_left)
+
 
 def follow_straight_line(duration, direction=FORWARD):
     motor.motors_off()
- 
+
     start = ticks_ms()
-    while ticks_diff(ticks_ms(), start) < duration * 1000:
+    duration_ms = int(duration * 1000)
+    while ticks_diff(ticks_ms(), start) < duration_ms:
         drive_on_line(direction, line_sensor.read_sensors())
         sleep(LINE_FOLLOW_INTERVAL)
- 
+
     motor.motors_off()
+
 
 def at_junction(sensors):
     return bool((sensors[1] or sensors[2]) and (sensors[0] or sensors[3]))
 
+def back_up(count):
+    u_turn()
+    for _ in range(count):
+        reach_line(FORWARD)
+    u_turn()
+    follow_straight_line(SENSORS_TO_AXIS_DURATION, REVERSE)  
+
 def reach_line(direction=FORWARD):
-
     wait()
-
     motor.motors_off()
- 
+
     left_junction = False
- 
+
     while True:
         sensors = line_sensor.read_sensors()
- 
+
         if at_junction(sensors):
             if left_junction:
                 break
         else:
             left_junction = True
- 
-        drive_on_line(direction, sensors)
 
+        drive_on_line(direction, sensors)
         sleep(LINE_FOLLOW_INTERVAL)
- 
+
     motor.motors_off()
     wait()
     return True
 
+
 def reach_line_end():
-
     wait()
-
     motor.motors_off()
- 
+
     lost = 0
-    start = ticks_ms()
- 
+
     while lost < LINE_LOST_SAMPLES:
         sensors = line_sensor.read_sensors()
- 
+
         if sum(sensors) == 0:
             lost += 1
         else:
             lost = 0
- 
+
         drive_on_line(FORWARD, sensors)
         sleep(LINE_FOLLOW_INTERVAL)
- 
+
     motor.motors_off()
     wait()
 
-def rotate_bot(side: Side):
-    motor.motors_off()
- 
-    motor.set_motor(side, REVERSE)
-    motor.set_motor(opposite(side), FORWARD)
- 
-    sleep(ROTATION_90_DURATION)
- 
+
+def rotate_bot(side):
     motor.motors_off()
 
-def rotation_from_front(side: Side):
+    motor.set_motor(side, REVERSE)
+    motor.set_motor(opposite(side), FORWARD)
+
+    sleep(ROTATION_90_DURATION)
+
+    motor.motors_off()
+
+
+def rotation_from_front(side):
     wait()
     follow_straight_line(SENSORS_TO_AXIS_DURATION)
     wait()
     rotate_bot(side)
     wait()
 
+
 def check_for_box():
     return True
 
+
 def pick_up_box():
-    return 
+    return
+
 
 def spot_not_taken():
     return True
 
-def move(start: Position, end: Position):
- 
+
+def move(start, end):
     if start.section == end.section and start.position == end.position:
         return
- 
+
     if end.section == Section.INITIAL:
         if start.section != Section.INITIAL:
             move_to_initial(start)
@@ -163,102 +197,113 @@ def move(start: Position, end: Position):
         move_from_initial(end)
 
 
-def move_from_initial(end: Position):
+def move_from_initial(end):
     if end.section == Section.UP:
         move_from_initial_up(end)
     else:
         move_from_initial_side(end)
 
-def move_in_section(start: Position, end: Position):
+
+def move_in_section(start, end):
     if end.position > start.position:
         for _ in range(end.position - start.position):
             reach_line(FORWARD)
     else:
-        for _ in range(start.position - end.position):
-            reach_line(REVERSE)
+        #u_turn()
+        #for _ in range(start.position - end.position):
+            #it was reach_line(REVERSE) before
+        #    reach_line(FORWARD)
+        #u_turn()
+
+        back_up(start.position - end.position)
 
 
-    return
+def move_from_initial_side(end):
+    to_side = section_side(end.section)  # side of the robot the section is on
 
-def move_from_initial_side(end: Position):
-    to_side = section_side(end.section)      # side of the robot the section is on
- 
     # back up until the bottom line, turn towards the section, drive to the corner
     reach_line(REVERSE)
+
     rotation_from_front(to_side)
+
     reach_line(FORWARD)
- 
+    reach_line(FORWARD)
+
     rotation_from_front(opposite(to_side))
     for _ in range(end.position):
         reach_line(FORWARD)
 
-def move_to_initial(start: Position):
- 
+
+def move_to_initial(start):
     side = section_side(start.section)
- 
+
     # back down the vertical line to the corner
-    for _ in range(start.position):
-        reach_line(REVERSE)
- 
+    #u_turn()
+    #for _ in range(start.position):
+        #it was reach_line(REVERSE) before
+    #    reach_line(FORWARD)
+    #u_turn()
+
+    back_up(start.position)
+
     # along the bottom line to the centre, then face up the centre line
     rotation_from_front(opposite(side))
+    reach_line(FORWARD)
     reach_line(FORWARD)
     rotation_from_front(side)
 
 
-def move_from_initial_up(end: Position):
-
+def move_from_initial_up(end):
     return
 
 
-def leave_branch(return_side: Side, entered: bool): 
+def leave_branch(return_side, entered):
     if entered:
         reach_line(REVERSE)                  # back out until the main line
         rotation_from_front(return_side)     # face up again (A-state)
     else:
         rotate_bot(return_side)              # axis is still on the junction
         wait()
- 
+
     wait()
     follow_straight_line(SENSORS_TO_AXIS_DURATION, REVERSE)
     wait()
 
-def pick_up(state: State):
 
+def pick_up(state):
     current_side = section_side(state.section)
- 
+
     # go up to the box
     rotation_from_front(opposite(current_side))
     reach_line(FORWARD)
- 
+
     sleep(2)
 
     # go back
     leave_branch(current_side, True)
 
 
-def place_lower(state: State):
- 
+def place_lower(state):
     current_side = section_side(state.section)
- 
+
     rotation_from_front(opposite(current_side))
- 
+
     reach_line_end()
 
     sleep(2)
- 
+
     leave_branch(current_side, True)
 
+
 '''
-def place_upper(state: State):
+def place_upper(state):
     place_upper_side(state, Side.RIGHT)
     place_upper_side(state, Side.LEFT)
 
 
-def place_upper_side(state: State, side: Side):
+def place_upper_side(state, side):
 
     current_side = side
-    opposite_side = Side.LEFT
 
     if current_side == Side.RIGHT:
         opposite_side = Side.LEFT
@@ -269,18 +314,17 @@ def place_upper_side(state: State, side: Side):
 
     rotation_from_front(opposite_side)
 
-    #check if the spot is not taken and if it's not taken place it down
+    # check if the spot is not taken and if it's not taken place it down
     if spot_not_taken():
-        #go up to the box
+        # go up to the box
         reach_no_line()
 
-        #place the box
+        # place the box
         place_box_upper()
 
         back_up_until_line()
 
-    #go back
-
+    # go back
     rotation_from_front(current_side)
     back_up_until_line()
 '''

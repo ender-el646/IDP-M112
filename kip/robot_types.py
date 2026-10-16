@@ -1,29 +1,37 @@
-from dataclasses import dataclass, replace
-from enum import Enum
-
-class Section(Enum):
+class Section:
     INITIAL = 1
     UP = 2
     RIGHT = 3
     LEFT = 4
 
-class Goal(Enum):
+class Goal:
     GET_BOX = 1
     PLACE_BOX_UP = 2
     PLACE_BOX_DOWN = 3
     RETURN_TO_INITIAL = 4
 
-class Side(Enum):
+class Side:
     RIGHT = 1
     LEFT = 2
 
-@dataclass(frozen=True)
 class State:
-    position: int = 0
-    section: Section = Section.INITIAL
-    goal: Goal = Goal.GET_BOX
+    __slots__ = ("position", "section", "goal")
 
-@dataclass(frozen=True)
+    def __init__(self, position=0, section=Section.INITIAL, goal=Goal.GET_BOX):
+        self.position = position
+        self.section = section
+        self.goal = goal
+
+    def __repr__(self):
+        return "State(pos={}, section={}, goal={})".format(
+            self.position, self.section, self.goal)
+
 class Position:
-    position: int = 0
-    section: Section = Section.INITIAL
+    __slots__ = ("position", "section")
+
+    def __init__(self, position=0, section=Section.INITIAL):
+        self.position = position
+        self.section = section
+
+    def __repr__(self):
+        return "Position(pos={}, section={})".format(self.position, self.section)

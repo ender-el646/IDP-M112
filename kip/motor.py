@@ -29,8 +29,8 @@ class Motor:
 
 
 # Create each motor once so the pins are only set up a single time
-motor_right = Motor(dirPin=4, PWMPin=5)  # Motor 3 is controlled from Motor Driver 2 #1, on GP4/5
-motor_left = Motor(dirPin=7, PWMPin=6)  # Motor 4 is controlled from Motor Driver 2 #2, on GP7/6
+motor_right = Motor(dirPin=7, PWMPin=6)  # Motor 3 is controlled from Motor Driver 2 #1, on GP4/5
+motor_left = Motor(dirPin=4, PWMPin=5)  # Motor 4 is controlled from Motor Driver 2 #2, on GP7/6
 
 
 def set_motor_right(direction=FORWARD, speed=100):
