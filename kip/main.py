@@ -44,6 +44,8 @@ while elapsed() < FINISH_TIME:
 
     go(state, position3)
 
+    break
+
 '''
 # Full planner loop, to re-enable once pick_up returns (result, direction)
 # and place_upper exists:
