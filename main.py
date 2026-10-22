@@ -10,6 +10,7 @@ from test_STU_22L_IO_Mode import test_STU_22L_IO_Mode
 from test_STU_22L_UART import test_STU_22L_UART
 from test_tiny_code_reader import test_tiny_code_reader'''
 import motor
+import servo
 from test_vl53l0x import test_vl53l0x
 import line_sensor
 import line_follow
@@ -47,6 +48,7 @@ line_follow.left180()
 motor.motors_off()
 print("main.py Done!")
 '''
+'''
 
 from machine import ADC, Pin
 import time
@@ -72,3 +74,63 @@ while True:
     state = "South" if gauss > 20 else "North" if gauss < -20 else "none"
     print("%.3f V  %7.1f G  magnet: %s" % (v, gauss, state))
     time.sleep(0.1)
+
+'''
+
+
+from machine import ADC, Pin
+import time
+
+servo1 = servo.Servo(Pin(15)) 
+servo2 = servo.Servo(Pin(13)) 
+
+def test_positions():
+    while True:
+        
+        #print("Move to 0°")
+        #servo1.set_angle(0)
+        #time.sleep(5)
+
+        #print("Move to 135° (centre)")
+        #servo1.set_angle(135)
+        #time.sleep(5)
+
+        #print("Move to 270°")
+        #servo2.set_angle(270)
+        #time.sleep(5)
+
+        for i in range(180, 270, 5):
+            servo1.set_angle(i)
+            sleep(0.05)
+
+        servo1.set_angle(180)
+        sleep(1)
+        
+
+def raise_slowly(cur_servo, cur_angle, final_angle):
+    for i in range(cur_angle, final_angle, 5):
+        cur_servo.set_angle(i)
+        sleep(0.05)
+
+
+servo1.set_angle(40)
+sleep(1)
+servo2.set_angle(270)
+sleep(1)
+servo2.set_angle(145)
+sleep(1)
+raise_slowly(servo1, 40, 270)
+sleep(1)
+servo2.set_angle(270)
+sleep(1)
+
+        
+#servo1.set_angle(80)
+
+#test_positions()
+
+#servo2.set_angle(180)
+
+sleep(15)
+
+
