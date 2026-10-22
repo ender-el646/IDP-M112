@@ -3,6 +3,9 @@ import motor
 from utime import sleep, ticks_ms, ticks_diff
 import line_sensor
 
+def elapsed(start):
+    # seconds since program start
+    return ticks_diff(ticks_ms(), start) / 1000
 
 FORWARD = 1
 REVERSE = 0
@@ -16,16 +19,25 @@ SMALL_CORRECTION = 20
 LARGE_CORRECTION = 40
 LINE_FOLLOW_SPEED = 100
 
+TURNING_SPEED = 70
+ROTATE_SLEEP = 0.001
+
 REVERSE_FACTOR = 0.5
 LINE_FOLLOW_REVERSE_SPEED = 100
 
-LINE_LOST_SAMPLES = 2
+LINE_LOST_SAMPLES = 1
 
 # need to calibrate
 
 # maneuvers
 SENSORS_TO_AXIS_DURATION = 0.6
-ROTATION_90_DURATION = 0.58     
+ROTATION_90_DURATION = 0.57
+
+ROTATION_90_DURATION_MIN = 0.7
+ROTATION_90_DURATION_MAX = 1.0
+
+ROTATION_180_DURATION_MIN = 1.3
+ROTATION_180_DURATION_MAX = 2.0
 
 
 def wait():
@@ -60,9 +72,27 @@ def u_turn():
     wait()
     follow_straight_line(SENSORS_TO_AXIS_DURATION)  # put axle on the junction
     wait()
-    rotate_bot(Side.RIGHT)
-    wait()
-    rotate_bot(Side.RIGHT)
+    motor.motors_off()
+
+    start = ticks_ms()
+
+    motor.set_motor(Side.RIGHT, REVERSE, TURNING_SPEED)
+    motor.set_motor(Side.LEFT, FORWARD, TURNING_SPEED)
+
+    sleep(ROTATION_180_DURATION_MIN)
+
+    cur_time = ROTATION_180_DURATION_MIN
+
+    while elapsed(start) <= ROTATION_180_DURATION_MAX:
+            sensors = line_sensor.read_sensors()
+    
+            if sensors[1] == 1 and sensors[2] == 1:
+                motor.motors_off()
+                return
+    
+            sleep(ROTATE_SLEEP)
+
+    motor.motors_off()
     wait()
     follow_straight_line(SENSORS_TO_AXIS_DURATION, REVERSE)
     wait()
@@ -104,18 +134,19 @@ def back_up(count):
     for _ in range(count):
         reach_line(FORWARD)
     u_turn()
-    follow_straight_line(SENSORS_TO_AXIS_DURATION, REVERSE)  
 
-def reach_line(direction=FORWARD):
+def reach_line(direction=FORWARD, cooldown=0.2):
     wait()
     motor.motors_off()
 
     left_junction = False
 
+    start = ticks_ms()
+
     while True:
         sensors = line_sensor.read_sensors()
 
-        if at_junction(sensors):
+        if at_junction(sensors) and elapsed(start) >= cooldown:
             if left_junction:
                 break
         else:
@@ -129,16 +160,18 @@ def reach_line(direction=FORWARD):
     return True
 
 
-def reach_line_end():
+def reach_line_end(cooldown=1):
     wait()
     motor.motors_off()
 
     lost = 0
 
+    start = ticks_ms()
+
     while lost < LINE_LOST_SAMPLES:
         sensors = line_sensor.read_sensors()
 
-        if sum(sensors) == 0:
+        if sum(sensors) == 0 and elapsed(start) >= cooldown:
             lost += 1
         else:
             lost = 0
@@ -153,10 +186,23 @@ def reach_line_end():
 def rotate_bot(side):
     motor.motors_off()
 
-    motor.set_motor(side, REVERSE)
-    motor.set_motor(opposite(side), FORWARD)
+    start = ticks_ms()
 
-    sleep(ROTATION_90_DURATION)
+    motor.set_motor(side, REVERSE, TURNING_SPEED)
+    motor.set_motor(opposite(side), FORWARD, TURNING_SPEED)
+
+    sleep(ROTATION_90_DURATION_MIN)
+
+    cur_time = ROTATION_90_DURATION_MIN
+
+    while elapsed(start) <= ROTATION_90_DURATION_MAX:
+            sensors = line_sensor.read_sensors()
+    
+            if sensors[1] == 1 and sensors[2] == 1:
+                motor.motors_off()
+                return
+    
+            sleep(ROTATE_SLEEP)
 
     motor.motors_off()
 
@@ -244,10 +290,15 @@ def move_to_initial(start):
     #    reach_line(FORWARD)
     #u_turn()
 
-    back_up(start.position)
-
+    u_turn()
+    for _ in range(start.position):
+        reach_line(FORWARD)
+    wait()
+    follow_straight_line(SENSORS_TO_AXIS_DURATION)  # put axle on the junction
+    wait()
+    rotate_bot(side)
+    wait()
     # along the bottom line to the centre, then face up the centre line
-    rotation_from_front(opposite(side))
     reach_line(FORWARD)
     reach_line(FORWARD)
     rotation_from_front(side)

@@ -43,7 +43,7 @@ class Servo:
         self.servo.duty_u16(0)
 
 
-servo1 = Servo(Pin(15)) # Connected to Servo 1
+#servo1 = Servo(Pin(15)) # Connected to Servo 1
 
 
 def set_servo1(angle):
@@ -55,19 +55,16 @@ def servo1_off():
 
 
 def test_positions():
-    while True:
-        print("Move to 0°")
-        set_servo1(0)
-        time.sleep(2)
+    #while True:
+    #    print("Move to 0°")
+    #    set_servo1(0)
+    #    time.sleep(2)
 
-        print("Move to 135° (centre)")
-        set_servo1(135)
-        time.sleep(2)
+    #    print("Move to 135° (centre)")
+    #    set_servo1(135)
+    #    time.sleep(2)
 
-        print("Move to 270°")
-        set_servo1(270)
-        time.sleep(2)
+    #    print("Move to 270°")
+    #    set_servo1(270)
+    #    time.sleep(2)
 
-
-if __name__ == "__main__":
-    test_positions()

@@ -35,6 +35,7 @@ position1 = Position(1, Section.RIGHT)
 position2 = Position(3, Section.RIGHT)
 position3 = Position(0, Section.INITIAL)
 
+'''
 while elapsed() < FINISH_TIME:
     go(state, position1)
     pick_up(state)
@@ -44,9 +45,11 @@ while elapsed() < FINISH_TIME:
 
     go(state, position3)
 
+    break
 '''
-# Full planner loop, to re-enable once pick_up returns (result, direction)
-# and place_upper exists:
+
+
+while elapsed() < FINISH_TIME:
 
     if state.goal == Goal.GET_BOX:
         for p in PICK_UPS:
@@ -73,4 +76,3 @@ while elapsed() < FINISH_TIME:
         else:
             go(state, INITIAL_PLACE)
             break
-'''
