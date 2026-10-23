@@ -8,4 +8,4 @@ sensors = [Pin(p, Pin.IN, Pin.PULL_DOWN) for p in SENSOR_PINS]
 
 def read_sensors():
     # Returns the 4 digital readings (0 or 1), in the order of jumper pins 24, 25, 26, 27
-    return [s.value() for s in sensors]
+    return [s.value() for s in sensors][::-1]

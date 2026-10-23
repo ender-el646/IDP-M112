@@ -1,6 +1,7 @@
 from utime import sleep, ticks_ms, ticks_diff
 from robot_types import Section, Goal, State, Position, Side
-from execution_machine import move, pick_up, place_lower
+from execution_machine import move, pick_up, place_lower, reach_line
+from machine import Pin
 
 START_TIME = ticks_ms()
 
@@ -35,19 +36,30 @@ position1 = Position(1, Section.RIGHT)
 position2 = Position(3, Section.RIGHT)
 position3 = Position(0, Section.INITIAL)
 
+button_pin = 10
+button = Pin(button_pin, Pin.IN, Pin.PULL_UP)
+
+while True:
+
+    sleep(0.1)
+    if button.value() == 0:
+        START_TIME = ticks_ms()
+
+        if elapsed() < FINISH_TIME:
+            go(state, position1)
+            pick_up(state)
+
+            go(state, position2)
+            place_lower(state)
+
+            go(state, position3)
+
+            break
+
+        break
+
+
 '''
-while elapsed() < FINISH_TIME:
-    go(state, position1)
-    pick_up(state)
-
-    go(state, position2)
-    place_lower(state)
-
-    go(state, position3)
-
-    break
-'''
-
 
 while elapsed() < FINISH_TIME:
 
@@ -76,3 +88,19 @@ while elapsed() < FINISH_TIME:
         else:
             go(state, INITIAL_PLACE)
             break
+            
+'''
+
+#rotate_bot_by_set_amount(0.8)
+#rotate_bot_by_set_amount(1.3)
+
+#rotate_bot_by_set_amount(2.1)
+#rotate_bot_by_set_amount(0.6)
+#sleep(10)
+#rotate_bot_by_set_amount(1.1)
+#sleep(10)
+#rotate_bot_by_set_amount(1.4)
+#sleep(10)
+#rotate_bot_by_set_amount(1.9)
+#sleep(10)
+

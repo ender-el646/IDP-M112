@@ -1,5 +1,6 @@
 from robot_types import Section, Goal, State, Position, Side
 import motor
+import servo
 from utime import sleep, ticks_ms, ticks_diff
 import line_sensor
 
@@ -14,7 +15,7 @@ REVERSE = 0
 WAIT_TIME = 0.2
 
 # line follow constants
-LINE_FOLLOW_INTERVAL = 0.05
+LINE_FOLLOW_INTERVAL = 0.005
 SMALL_CORRECTION = 20
 LARGE_CORRECTION = 40
 LINE_FOLLOW_SPEED = 100
@@ -25,19 +26,26 @@ ROTATE_SLEEP = 0.001
 REVERSE_FACTOR = 0.5
 LINE_FOLLOW_REVERSE_SPEED = 100
 
-LINE_LOST_SAMPLES = 1
+LINE_LOST_SAMPLES = 2
 
 # need to calibrate
 
 # maneuvers
-SENSORS_TO_AXIS_DURATION = 0.6
+SENSORS_TO_AXIS_DURATION = 0.47
 ROTATION_90_DURATION = 0.57
 
-ROTATION_90_DURATION_MIN = 0.7
-ROTATION_90_DURATION_MAX = 1.0
+ROTATION_90_DURATION_MIN = 0.6
+ROTATION_90_DURATION_MAX = 1.1
 
-ROTATION_180_DURATION_MIN = 1.3
-ROTATION_180_DURATION_MAX = 2.0
+ROTATION_180_DURATION_MIN = 1.4
+ROTATION_180_DURATION_MAX = 1.9
+
+INTIAL_HEIGHT = 270
+PICK_UP_HEIGHT = 0
+RAISE_UP_HEIGHT = 170
+INITIAL_WIDTH = 270
+PICK_UP_WIDTH = 135
+DROP_WIDTH = 145
 
 
 def wait():
@@ -183,6 +191,19 @@ def reach_line_end(cooldown=1):
     wait()
 
 
+def rotate_bot_by_set_amount(duration):
+    
+    motor.motors_off()
+
+    start = ticks_ms()
+
+    motor.set_motor(Side.RIGHT, FORWARD, TURNING_SPEED)
+    motor.set_motor(Side.LEFT, REVERSE, TURNING_SPEED)
+
+    sleep(duration)
+
+    motor.motors_off()
+
 def rotate_bot(side):
     motor.motors_off()
 
@@ -220,11 +241,26 @@ def check_for_box():
 
 
 def pick_up_box():
-    return
+
+    servo.servo_clamp.set_angle(INITIAL_WIDTH)
+    sleep(1)
+    raise_slowly(servo.servo_height, INTIAL_HEIGHT, PICK_UP_HEIGHT)
+    sleep(3)
+    servo.servo_clamp.set_angle(PICK_UP_WIDTH)
+    sleep(1.5)
+    raise_slowly(servo.servo_height, PICK_UP_HEIGHT, RAISE_UP_HEIGHT)
+    sleep(1)
+    servo.servo_clamp.off()
+    servo.servo_height.off()
 
 
 def spot_not_taken():
     return True
+
+def reset_servo():
+    raise_slowly(servo.servo_height, 0, INTIAL_HEIGHT)
+    servo.servo_clamp.set_angle(INITIAL_WIDTH)
+    sleep(3)
 
 
 def move(start, end):
@@ -330,6 +366,8 @@ def pick_up(state):
 
     sleep(2)
 
+    pick_up_box()
+
     # go back
     leave_branch(current_side, True)
 
@@ -343,7 +381,15 @@ def place_lower(state):
 
     sleep(2)
 
+    servo.servo_clamp.set_angle(DROP_WIDTH)
+    sleep(1)
+
     leave_branch(current_side, True)
+
+    raise_slowly(servo.servo_height, RAISE_UP_HEIGHT, INTIAL_HEIGHT)
+    servo.servo_clamp.set_angle(INITIAL_WIDTH)
+    sleep(2)
+    
 
 
 '''
@@ -379,3 +425,21 @@ def place_upper_side(state, side):
     rotation_from_front(current_side)
     back_up_until_line()
 '''
+
+
+
+
+
+def raise_slowly(cur_servo, cur_angle, final_angle):
+    #for i in range(cur_angle, final_angle, 5):
+    #    cur_servo.set_angle(i)
+    #    sleep(0.05)
+
+    if cur_angle > final_angle:
+        for i in reversed(range(final_angle, cur_angle, 5)):
+            cur_servo.set_angle(i)
+            sleep(0.05)
+    else:
+        for i in (range(cur_angle, final_angle, 5)):
+            cur_servo.set_angle(i)
+            sleep(0.05)
