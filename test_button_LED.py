@@ -6,8 +6,8 @@ led_pin = 28
 led = Pin(led_pin, Pin.OUT)
 
 #Set the button pin
-button_pin = 12
-button = Pin(button_pin, Pin.IN, Pin.PULL_DOWN)
+button_pin = 10
+button = Pin(button_pin, Pin.IN, Pin.PULL_UP)
 
 #Continiously update the LED value and print said value
 while True:
