@@ -122,6 +122,7 @@ def raise_slowly(cur_servo, cur_angle, final_angle):
             sleep(0.05)
 
 
+
 #servo2.set_angle(270)
 #sleep(2)
 #servo2.set_angle(270)
@@ -129,17 +130,51 @@ def raise_slowly(cur_servo, cur_angle, final_angle):
 #servo1.set_angle(145)
 #sleep(1)
 
-'''
-
-servo1.set_angle(270)
-sleep(5)
-raise_slowly(servo2, 270, 0)
-sleep(5)
-servo1.set_angle(125)
-sleep(5)
 
 '''
+raise_slowly(servo2, 240, 270)
+sleep(5)
+'''
+'''
 
+from machine import Pin
+from utime import sleep
+
+#Set the LED pin and configuration
+led_pin = 2
+led = Pin(led_pin, Pin.OUT)
+led.value(0)
+sleep(1)
+led.value(1)
+sleep(1)
+led.value(0)
+sleep(1)
+led.value(1)
+sleep(1)
+led.value(0)
+sleep(1)
+led.value(1)
+sleep(1)
+
+sleep(100)
+
+'''
+
+from machine import Pin
+import time
+
+ir = Pin(22, Pin.IN)
+
+while True:
+    if ir.value() == 0:
+        print("stop")
+        break
+    time.sleep_ms(1)
+
+
+
+
+'''
 
 raise_slowly(servo2, 0, 270)
 sleep(5)
@@ -152,7 +187,7 @@ sleep(5)
 
 servo1.off()
 servo2.off()
-
+'''
 '''    
 #servo1.set_angle(80)
 

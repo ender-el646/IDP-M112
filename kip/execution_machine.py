@@ -42,10 +42,10 @@ ROTATION_180_DURATION_MAX = 1.9
 
 INTIAL_HEIGHT = 270
 PICK_UP_HEIGHT = 0
-RAISE_UP_HEIGHT = 170
+RAISE_UP_HEIGHT = 210
 INITIAL_WIDTH = 270
-PICK_UP_WIDTH = 135
-DROP_WIDTH = 145
+PICK_UP_WIDTH = 185
+DROP_WIDTH = 230
 
 
 def wait():
@@ -143,7 +143,7 @@ def back_up(count):
         reach_line(FORWARD)
     u_turn()
 
-def reach_line(direction=FORWARD, cooldown=0.2):
+def reach_line(direction=FORWARD, cooldown=0.25):
     wait()
     motor.motors_off()
 
@@ -366,7 +366,13 @@ def pick_up(state):
 
     sleep(2)
 
+    follow_straight_line(0.05, FORWARD)
+
+    sleep(2)
+
     pick_up_box()
+
+    follow_straight_line(0.1, REVERSE)
 
     # go back
     leave_branch(current_side, True)
