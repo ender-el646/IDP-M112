@@ -1,8 +1,12 @@
 from robot_types import Section, Goal, State, Position, Side
 import motor
 import servo
+import hall
 from utime import sleep, ticks_ms, ticks_diff
 import line_sensor
+from machine import Pin
+import distance_sensor
+import ir_sensor
 
 def elapsed(start):
     # seconds since program start
@@ -12,10 +16,11 @@ FORWARD = 1
 REVERSE = 0
 
 # debug constants
-WAIT_TIME = 0.2
+WAIT_TIME = 0.4
 
 # line follow constants
 LINE_FOLLOW_INTERVAL = 0.005
+WAIT_INTERVAL = 0.005
 SMALL_CORRECTION = 20
 LARGE_CORRECTION = 40
 LINE_FOLLOW_SPEED = 100
@@ -35,21 +40,47 @@ SENSORS_TO_AXIS_DURATION = 0.47
 ROTATION_90_DURATION = 0.57
 
 ROTATION_90_DURATION_MIN = 0.6
-ROTATION_90_DURATION_MAX = 1.1
+ROTATION_90_DURATION_MAX = 1.2
 
-ROTATION_180_DURATION_MIN = 1.4
-ROTATION_180_DURATION_MAX = 1.9
+ROTATION_180_DURATION_MIN = 1.5
+ROTATION_180_DURATION_MAX = 2.0
 
-INTIAL_HEIGHT = 270
+INTIAL_HEIGHT = 0
 PICK_UP_HEIGHT = 0
+HOLD_HEIGHT = 90
 RAISE_UP_HEIGHT = 210
 INITIAL_WIDTH = 270
 PICK_UP_WIDTH = 185
 DROP_WIDTH = 230
 
+CHECK_LINE_FOLLOW_DURATION = 0.8
+DISTANCE_WITH_BOX = 400
+DISTANCE_WITHOUT_BOX = 500
 
-def wait():
-    sleep(WAIT_TIME)
+RACK_BACK_UP = 0.4
+
+orange_led_counter = 0
+orange_led_value = 0
+
+yellow_led_pin = 27
+green_led_pin = 2
+red_led_pin = 28
+
+yellow_led = Pin(yellow_led_pin, Pin.OUT)
+green_led = Pin(green_led_pin, Pin.OUT)
+red_led = Pin(red_led_pin, Pin.OUT)
+
+def wait(wait_duration=WAIT_TIME):
+    for i in range(int(wait_duration/WAIT_INTERVAL)):
+        sleep(WAIT_INTERVAL)
+        counter = counter + 1
+        if counter % 100 == 0:
+            if orange_led_value == 1:
+                orange_led_value = 0
+            else: 
+                orange_led_value = 1
+
+            yellow_led.value(orange_led_value)
 
 
 def opposite(side):
@@ -87,7 +118,8 @@ def u_turn():
     motor.set_motor(Side.RIGHT, REVERSE, TURNING_SPEED)
     motor.set_motor(Side.LEFT, FORWARD, TURNING_SPEED)
 
-    sleep(ROTATION_180_DURATION_MIN)
+    wait(ROTATION_180_DURATION_MIN)
+
 
     cur_time = ROTATION_180_DURATION_MIN
 
@@ -98,11 +130,36 @@ def u_turn():
                 motor.motors_off()
                 return
     
-            sleep(ROTATE_SLEEP)
+            wait(ROTATE_SLEEP)
 
     motor.motors_off()
     wait()
     follow_straight_line(SENSORS_TO_AXIS_DURATION, REVERSE)
+    wait()
+
+def stationary_u_turn():
+    motor.motors_off()
+
+    start = ticks_ms()
+
+    motor.set_motor(Side.RIGHT, REVERSE, TURNING_SPEED)
+    motor.set_motor(Side.LEFT, FORWARD, TURNING_SPEED)
+
+    wait(ROTATION_180_DURATION_MIN)
+
+
+    cur_time = ROTATION_180_DURATION_MIN
+
+    while elapsed(start) <= ROTATION_180_DURATION_MAX:
+            sensors = line_sensor.read_sensors()
+    
+            if sensors[1] == 1 and sensors[2] == 1:
+                motor.motors_off()
+                return
+    
+            wait(ROTATE_SLEEP)
+
+    motor.motors_off()
     wait()
 
 def drive_on_line(direction, sensors):
@@ -129,7 +186,7 @@ def follow_straight_line(duration, direction=FORWARD):
     duration_ms = int(duration * 1000)
     while ticks_diff(ticks_ms(), start) < duration_ms:
         drive_on_line(direction, line_sensor.read_sensors())
-        sleep(LINE_FOLLOW_INTERVAL)
+        wait(LINE_FOLLOW_INTERVAL)
 
     motor.motors_off()
 
@@ -161,7 +218,7 @@ def reach_line(direction=FORWARD, cooldown=0.25):
             left_junction = True
 
         drive_on_line(direction, sensors)
-        sleep(LINE_FOLLOW_INTERVAL)
+        wait(LINE_FOLLOW_INTERVAL)
 
     motor.motors_off()
     wait()
@@ -185,7 +242,7 @@ def reach_line_end(cooldown=1):
             lost = 0
 
         drive_on_line(FORWARD, sensors)
-        sleep(LINE_FOLLOW_INTERVAL)
+        wait(LINE_FOLLOW_INTERVAL)
 
     motor.motors_off()
     wait()
@@ -200,11 +257,11 @@ def rotate_bot_by_set_amount(duration):
     motor.set_motor(Side.RIGHT, FORWARD, TURNING_SPEED)
     motor.set_motor(Side.LEFT, REVERSE, TURNING_SPEED)
 
-    sleep(duration)
+    wait(duration)
 
     motor.motors_off()
 
-def rotate_bot(side):
+def rotate_bot(side, three_sensors=0):
     motor.motors_off()
 
     start = ticks_ms()
@@ -212,27 +269,30 @@ def rotate_bot(side):
     motor.set_motor(side, REVERSE, TURNING_SPEED)
     motor.set_motor(opposite(side), FORWARD, TURNING_SPEED)
 
-    sleep(ROTATION_90_DURATION_MIN)
+    wait(ROTATION_90_DURATION_MIN)
 
     cur_time = ROTATION_90_DURATION_MIN
 
     while elapsed(start) <= ROTATION_90_DURATION_MAX:
             sensors = line_sensor.read_sensors()
-    
-            if sensors[1] == 1 and sensors[2] == 1:
+
+            if sensors[1] == 1 and sensors[2] == 1 and three_sensors == 0:
+                motor.motors_off()
+                return
+            if sensors[1] == 1 and sensors[2] == 1 and three_sensors == 1 and (sensors[0] == 1 or sensors[3] == 1):
                 motor.motors_off()
                 return
     
-            sleep(ROTATE_SLEEP)
+            wait(ROTATE_SLEEP)
 
     motor.motors_off()
 
 
-def rotation_from_front(side):
+def rotation_from_front(side, three_sensors=0):
     wait()
     follow_straight_line(SENSORS_TO_AXIS_DURATION)
     wait()
-    rotate_bot(side)
+    rotate_bot(side, three_sensors)
     wait()
 
 
@@ -243,13 +303,13 @@ def check_for_box():
 def pick_up_box():
 
     servo.servo_clamp.set_angle(INITIAL_WIDTH)
-    sleep(1)
+    wait()
     raise_slowly(servo.servo_height, INTIAL_HEIGHT, PICK_UP_HEIGHT)
-    sleep(3)
+    wait()
     servo.servo_clamp.set_angle(PICK_UP_WIDTH)
-    sleep(1.5)
-    raise_slowly(servo.servo_height, PICK_UP_HEIGHT, RAISE_UP_HEIGHT)
-    sleep(1)
+    wait()
+    raise_slowly(servo.servo_height, PICK_UP_HEIGHT, HOLD_HEIGHT)
+    wait()
     servo.servo_clamp.off()
     servo.servo_height.off()
 
@@ -260,7 +320,7 @@ def spot_not_taken():
 def reset_servo():
     raise_slowly(servo.servo_height, 0, INTIAL_HEIGHT)
     servo.servo_clamp.set_angle(INITIAL_WIDTH)
-    sleep(3)
+    wait()
 
 
 def move(start, end):
@@ -317,39 +377,96 @@ def move_from_initial_side(end):
 
 
 def move_to_initial(start):
-    side = section_side(start.section)
 
-    # back down the vertical line to the corner
-    #u_turn()
-    #for _ in range(start.position):
-        #it was reach_line(REVERSE) before
-    #    reach_line(FORWARD)
-    #u_turn()
-
-    u_turn()
-    for _ in range(start.position):
+    if start.section == Section.UP:
+        u_turn()
+        for _ in range(start.position):
+            reach_line(FORWARD)
+        wait()
         reach_line(FORWARD)
-    wait()
-    follow_straight_line(SENSORS_TO_AXIS_DURATION)  # put axle on the junction
-    wait()
-    rotate_bot(side)
-    wait()
-    # along the bottom line to the centre, then face up the centre line
-    reach_line(FORWARD)
-    reach_line(FORWARD)
-    rotation_from_front(side)
+        wait()
+        u_turn()
+        wait()
+
+    else:
+
+        side = section_side(start.section)
+
+        # back down the vertical line to the corner
+        #u_turn()
+        #for _ in range(start.position):
+            #it was reach_line(REVERSE) before
+        #    reach_line(FORWARD)
+        #u_turn()
+
+        u_turn()
+        for _ in range(start.position):
+            reach_line(FORWARD)
+        wait()
+        follow_straight_line(SENSORS_TO_AXIS_DURATION)  # put axle on the junction
+        wait()
+        rotate_bot(side)
+        wait()
+        # along the bottom line to the centre, then face up the centre line
+        reach_line(FORWARD)
+        reach_line(FORWARD)
+        rotation_from_front(side)
 
 
 def move_from_initial_up(end):
-    return
+
+    ir_sensor.wait_until_green_light()
+
+    reach_line(FORWARD)
+    wait()
+    reach_line(FORWARD)
+    wait()
+    for _ in range(end.position):
+        reach_line(FORWARD)
+    wait()
 
 
 def leave_branch(return_side, entered):
     if entered:
         reach_line(REVERSE)                  # back out until the main line
-        rotation_from_front(return_side)     # face up again (A-state)
+        rotation_from_front(return_side, 0)     # face up again (A-state)
     else:
-        rotate_bot(return_side)              # axis is still on the junction
+        rotate_bot(return_side, 0)              # axis is still on the junction
+        wait()
+
+    wait()
+    follow_straight_line(SENSORS_TO_AXIS_DURATION, REVERSE)
+    wait()
+
+def leave_branch_rack_u_turn(return_side, entered):
+    if entered:
+
+        follow_straight_line(RACK_BACK_UP, REVERSE)
+        wait()
+        stationary_u_turn()
+        wait()
+        reach_line(FORWARD)  # back out until the main line
+        wait()
+        rotation_from_front(opposite(return_side), 1)
+
+        #reach_line(REVERSE)
+        #wait()                 
+        #rotation_from_front(return_side, 1)     # face up again (A-state)
+    else:
+        rotate_bot(return_side, 1)              # axis is still on the junction
+        wait()
+
+    wait()
+    follow_straight_line(SENSORS_TO_AXIS_DURATION, REVERSE)
+    wait()
+
+def leave_branch_rack(return_side, entered):
+    if entered:
+        reach_line(REVERSE)
+        wait()                 
+        rotation_from_front(return_side, 1)     # face up again (A-state)
+    else:
+        rotate_bot(return_side, 1)              # axis is still on the junction
         wait()
 
     wait()
@@ -364,47 +481,91 @@ def pick_up(state):
     rotation_from_front(opposite(current_side))
     reach_line(FORWARD)
 
-    sleep(2)
+    wait()
 
-    follow_straight_line(0.05, FORWARD)
+    motor.motors_off()
 
-    sleep(2)
+    start = ticks_ms()
+    duration_ms = int(0.5 * 1000)
+    while ticks_diff(ticks_ms(), start) < duration_ms:
+        drive_on_line(FORWARD, line_sensor.read_sensors())
+        wait(LINE_FOLLOW_INTERVAL)
+
+    motor.motors_off()
+
+    wait()
+
+    start = ticks_ms()
+    duration_ms = int(0.1 * 1000)
+    while ticks_diff(ticks_ms(), start) < duration_ms:
+        drive_on_line(REVERSE, line_sensor.read_sensors())
+        wait(LINE_FOLLOW_INTERVAL)
+
+    motor.motors_off()
 
     pick_up_box()
 
-    follow_straight_line(0.1, REVERSE)
+    field = hall.get_magnetic_field()
+
+    if field == 1:
+        red_led.value(1)
+        green_led.value(0)
+    elif field == -1:
+        red_led.value(0)
+        green_led.value(1)
+
+    motor.motors_off()
+
+    start = ticks_ms()
+    duration_ms = int(0.5 * 1000)
+    while ticks_diff(ticks_ms(), start) < duration_ms:
+        drive_on_line(REVERSE, line_sensor.read_sensors())
+        wait(LINE_FOLLOW_INTERVAL)
+
+    motor.motors_off()
 
     # go back
     leave_branch(current_side, True)
 
+    return field
+
 
 def place_lower(state):
+
     current_side = section_side(state.section)
 
     rotation_from_front(opposite(current_side))
 
     reach_line_end()
 
-    sleep(2)
+    wait()
+
+    raise_slowly(servo.servo_height, HOLD_HEIGHT, RAISE_UP_HEIGHT)
+
+    wait()
 
     servo.servo_clamp.set_angle(DROP_WIDTH)
-    sleep(1)
 
-    leave_branch(current_side, True)
+    red_led.value(0)
+    green_led.value(0)
+
+    wait()
+
+    leave_branch_rack_u_turn(current_side, True)
 
     raise_slowly(servo.servo_height, RAISE_UP_HEIGHT, INTIAL_HEIGHT)
     servo.servo_clamp.set_angle(INITIAL_WIDTH)
-    sleep(2)
+
+    wait()
+
+    #raise_slowly(servo.servo_height, RAISE_UP_HEIGHT, INTIAL_HEIGHT)
+    #servo.servo_clamp.set_angle(INITIAL_WIDTH)
+    #wait()
     
 
 
-'''
-def place_upper(state):
-    place_upper_side(state, Side.RIGHT)
-    place_upper_side(state, Side.LEFT)
 
-
-def place_upper_side(state, side):
+def place_upper(state, side):
 
     current_side = side
 
@@ -415,37 +576,77 @@ def place_upper_side(state, side):
     else:
         return
 
-    rotation_from_front(opposite_side)
+    rotation_from_front(current_side)
+    
+    wait()
 
     # check if the spot is not taken and if it's not taken place it down
-    if spot_not_taken():
-        # go up to the box
-        reach_no_line()
+    #if spot_not_taken():
+    reach_line_end()
 
-        # place the box
-        place_box_upper()
+    wait()
 
-        back_up_until_line()
+    servo.servo_clamp.set_angle(DROP_WIDTH)
 
-    # go back
-    rotation_from_front(current_side)
-    back_up_until_line()
-'''
+    red_led.value(0)
+    green_led.value(0)
 
+    wait()
 
+    leave_branch_rack_u_turn(opposite_side, True)
+
+    raise_slowly(servo.servo_height, RAISE_UP_HEIGHT, INTIAL_HEIGHT)
+    servo.servo_clamp.set_angle(INITIAL_WIDTH)
+
+    wait()
 
 
 
 def raise_slowly(cur_servo, cur_angle, final_angle):
     #for i in range(cur_angle, final_angle, 5):
     #    cur_servo.set_angle(i)
-    #    sleep(0.05)
+    #    wait(0.05)
 
     if cur_angle > final_angle:
         for i in reversed(range(final_angle, cur_angle, 5)):
             cur_servo.set_angle(i)
-            sleep(0.05)
+            wait(0.05)
     else:
         for i in (range(cur_angle, final_angle, 5)):
             cur_servo.set_angle(i)
-            sleep(0.05)
+            wait(0.05)
+
+
+def check_spot(side):
+    current_side = side
+
+    if current_side == Side.RIGHT:
+        opposite_side = Side.LEFT
+    elif current_side == Side.LEFT:
+        opposite_side = Side.RIGHT
+    else:
+        return
+
+    rotation_from_front(current_side)
+    
+    wait()
+
+    # check if the spot is not taken and if it's not taken place it down
+    #if spot_not_taken():
+    follow_straight_line(CHECK_LINE_FOLLOW_DURATION, FORWARD)
+
+    wait()
+
+    distance = distance_sensor.get_average_dist()
+
+    distance_diff_box = abs(distance - DISTANCE_WITH_BOX)
+    distance_diff_no_box = abs(distance - DISTANCE_WITHOUT_BOX)
+
+    empty = False
+
+    if distance_diff_box > distance_diff_no_box:
+        empty = True
+
+    leave_branch_rack(opposite_side, True)
+
+    return empty

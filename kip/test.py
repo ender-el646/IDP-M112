@@ -3,8 +3,8 @@ from utime import sleep
 
 
 
-motor.motor_left.Forward(100)
-motor.motor_right.Forward(100)
-sleep(1)
+motor.motor_left.Forward(70)
+motor.motor_right.Reverse(70)
+sleep(1.6)
 motor.motors_off()
 

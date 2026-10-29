@@ -14,7 +14,7 @@ import servo
 from test_vl53l0x import test_vl53l0x
 import line_sensor
 import line_follow
-from utime import sleep, sleep_ms, ticks_diff, ticks_ms
+from utime import sleep, sleep_ms, ticks_diff, ticks_ms, sleep_us
 print("Start Running")
 
 # Uncomment the test to run
@@ -48,6 +48,7 @@ line_follow.left180()
 motor.motors_off()
 print("main.py Done!")
 '''
+
 '''
 
 from machine import ADC, Pin
@@ -75,8 +76,8 @@ while True:
     print("%.3f V  %7.1f G  magnet: %s" % (v, gauss, state))
     time.sleep(0.1)
 
-'''
 
+'''
 
 from machine import ADC, Pin
 import time
@@ -113,17 +114,17 @@ def raise_slowly(cur_servo, cur_angle, final_angle):
     #    sleep(0.05)
 
     if cur_angle > final_angle:
-        for i in reversed(range(final_angle, cur_angle, 5)):
+        for i in reversed(range(final_angle, cur_angle, 1)):
             cur_servo.set_angle(i)
-            sleep(0.05)
+            sleep(0.02)
     else:
-        for i in (range(cur_angle, final_angle, 5)):
+        for i in (range(cur_angle, final_angle, 1)):
             cur_servo.set_angle(i)
-            sleep(0.05)
+            sleep(0.02)
 
-
-
-#servo2.set_angle(270)
+#raise_slowly(servo1, 270, 0)
+#sleep(1)
+#servo2.set_angle(70)
 #sleep(2)
 #servo2.set_angle(270)
 #sleep(1)
@@ -160,24 +161,29 @@ sleep(100)
 
 '''
 
+'''
 from machine import Pin
 import time
 
 ir = Pin(22, Pin.IN)
+last = ir.value()
 
 while True:
-    if ir.value() == 0:
-        print("stop")
-        break
-    time.sleep_ms(1)
-
-
+    v = ir.value()
+    if v != last:
+        print(v)
+        last = v
+    time.sleep_us(100)
 
 
 '''
+    
+
 
 raise_slowly(servo2, 0, 270)
 sleep(5)
+'''
+
 servo1.set_angle(270)
 sleep(5)
 
