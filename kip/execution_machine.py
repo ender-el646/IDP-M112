@@ -37,7 +37,7 @@ LINE_LOST_SAMPLES = 2
 
 # maneuvers
 SENSORS_TO_AXIS_DURATION = 0.47
-ROTATION_90_DURATION = 0.57
+#ROTATION_90_DURATION = 0.7
 
 ROTATION_90_DURATION_MIN = 0.6
 ROTATION_90_DURATION_MAX = 1.2
@@ -59,7 +59,6 @@ DISTANCE_WITHOUT_BOX = 500
 
 RACK_BACK_UP = 0.4
 
-orange_led_counter = 0
 orange_led_value = 0
 
 yellow_led_pin = 27
@@ -70,15 +69,33 @@ yellow_led = Pin(yellow_led_pin, Pin.OUT)
 green_led = Pin(green_led_pin, Pin.OUT)
 red_led = Pin(red_led_pin, Pin.OUT)
 
+counter = 0
+
 def wait(wait_duration=WAIT_TIME):
-    for i in range(int(wait_duration/WAIT_INTERVAL)):
-        sleep(WAIT_INTERVAL)
+    global counter
+    global orange_led_value
+
+    if wait_duration == ROTATE_SLEEP:
+        sleep(ROTATE_SLEEP)
         counter = counter + 1
-        if counter % 100 == 0:
+        if counter > 500:
             if orange_led_value == 1:
                 orange_led_value = 0
             else: 
                 orange_led_value = 1
+            counter = 0
+            yellow_led.value(orange_led_value)
+        return
+    
+    for i in range(int(wait_duration/WAIT_INTERVAL)):
+        sleep(WAIT_INTERVAL)
+        counter = counter + 5
+        if counter > 500:
+            if orange_led_value == 1:
+                orange_led_value = 0
+            else: 
+                orange_led_value = 1
+            counter = 0
 
             yellow_led.value(orange_led_value)
 
@@ -120,8 +137,6 @@ def u_turn():
 
     wait(ROTATION_180_DURATION_MIN)
 
-
-    cur_time = ROTATION_180_DURATION_MIN
 
     while elapsed(start) <= ROTATION_180_DURATION_MAX:
             sensors = line_sensor.read_sensors()
@@ -310,8 +325,7 @@ def pick_up_box():
     wait()
     raise_slowly(servo.servo_height, PICK_UP_HEIGHT, HOLD_HEIGHT)
     wait()
-    servo.servo_clamp.off()
-    servo.servo_height.off()
+
 
 
 def spot_not_taken():
@@ -382,6 +396,8 @@ def move_to_initial(start):
         u_turn()
         for _ in range(start.position):
             reach_line(FORWARD)
+        wait()
+        reach_line(FORWARD)
         wait()
         reach_line(FORWARD)
         wait()
@@ -536,11 +552,11 @@ def place_lower(state):
 
     rotation_from_front(opposite(current_side))
 
-    reach_line_end()
+    raise_slowly(servo.servo_height, HOLD_HEIGHT, RAISE_UP_HEIGHT)
 
     wait()
 
-    raise_slowly(servo.servo_height, HOLD_HEIGHT, RAISE_UP_HEIGHT)
+    reach_line_end()
 
     wait()
 
@@ -578,6 +594,8 @@ def place_upper(state, side):
 
     rotation_from_front(current_side)
     
+    raise_slowly(servo.servo_height, HOLD_HEIGHT, RAISE_UP_HEIGHT)
+
     wait()
 
     # check if the spot is not taken and if it's not taken place it down
@@ -607,14 +625,16 @@ def raise_slowly(cur_servo, cur_angle, final_angle):
     #    cur_servo.set_angle(i)
     #    wait(0.05)
 
+    step = 1
+
     if cur_angle > final_angle:
-        for i in reversed(range(final_angle, cur_angle, 5)):
+        for i in reversed(range(final_angle, cur_angle + step, step)):
             cur_servo.set_angle(i)
-            wait(0.05)
+            wait(0.01)
     else:
-        for i in (range(cur_angle, final_angle, 5)):
+        for i in (range(cur_angle, final_angle + step, step)):
             cur_servo.set_angle(i)
-            wait(0.05)
+            wait(0.01)
 
 
 def check_spot(side):

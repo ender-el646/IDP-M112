@@ -14,6 +14,7 @@ YELLOW_LIGHT_WAIT_TIME = 0.5
 cur_yellow_light = 0
 
 def wait_until_green_light():
+    global cur_yellow_light
     counter = 0
     while True:
         v = ir.value()
