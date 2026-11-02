@@ -1,7 +1,8 @@
 from utime import sleep, ticks_ms, ticks_diff
 from robot_types import Section, Goal, State, Position, Side
-from execution_machine import move, pick_up, place_lower, place_upper, reach_line, check_spot
+from execution_machine import move, pick_up, place_lower, place_upper, reach_line, check_spot, init
 from machine import Pin
+import hall
 
 START_TIME = ticks_ms()
 
@@ -40,8 +41,8 @@ position5 = Position(0, Section.INITIAL)
 button_pin = 10
 button = Pin(button_pin, Pin.IN, Pin.PULL_UP)
 
-yellow_led_pin = 27
-green_led_pin = 2
+yellow_led_pin = 2
+green_led_pin = 27
 red_led_pin = 28
 
 
@@ -53,45 +54,47 @@ yellow_led.value(1)
 green_led.value(0)
 red_led.value(0)
 
-empty_up = None
+empty_up = Position(1, Section.UP)
 empty_right = None
-empty_left = None
+empty_left = Position(3, Section.LEFT)
 
 while True:
-
+    
     sleep(0.05)
 
     if button.value() == 0:
 
-        START_TIME = ticks_ms()
+        init()
 
+        START_TIME = ticks_ms()
+        
         if elapsed() < THRESHOLD_TIME:
             for i in range(1, 7):
                 go(state, Position(i, Section.UP))
-                empty = check_spot(Side.LEFT)
+                empty = check_spot(Side.LEFT, True)
                 if empty:
-                    empty_up = state
+                    empty_up = Position(state.position, state.section)
                     break
             
             for i in range(3, 9):
                 go(state, Position(i, Section.LEFT))
-                empty = check_spot(Side.RIGHT)
+                empty = check_spot(Side.RIGHT, False)
                 if empty:
-                    empty_left = state
+                    empty_left = Position(state.position, state.section)
                     break
 
             go(state, Position(1, Section.LEFT))
             field = pick_up(state)
-
+            
             if field == 1:
                 go(state, empty_up)
                 place_upper(state, Side.LEFT)
 
                 for i in range(state.position, 7):
                     go(state, Position(i, Section.UP))
-                    empty = check_spot(Side.LEFT)
+                    empty = check_spot(Side.LEFT, True)
                     if empty:
-                        empty_up = state
+                        empty_up = Position(state.position, state.section)
                         break
 
             if field == -1:
@@ -100,11 +103,11 @@ while True:
                 
                 for i in range(state.position, 9):
                     go(state, Position(i, Section.LEFT))
-                    empty = check_spot(Side.RIGHT)
+                    empty = check_spot(Side.RIGHT, False)
                     if empty:
-                        empty_left = state
+                        empty_left = Position(state.position, state.section)
                         break
-
+        
         if elapsed() < THRESHOLD_TIME:
             go(state, Position(2, Section.LEFT))
             field = pick_up(state)
@@ -113,41 +116,31 @@ while True:
                 go(state, empty_up)
                 place_upper(state, Side.LEFT)
 
-                '''
+
                 for i in range(state.position, 7):
                     go(state, Position(i, Section.UP))
-                    empty = check_spot(Side.LEFT)
+                    empty = check_spot(Side.LEFT, True)
                     if empty:
-                        empty_up = state
+                        empty_up = Position(state.position, state.section)
                         break
-                '''
+        
+        
 
             if field == -1:
                 go(state, empty_left)
                 place_lower(state)
                 
-                '''
                 for i in range(state.position, 9):
                     go(state, Position(i, Section.LEFT))
-                    empty = check_spot(Side.RIGHT)
+                    empty = check_spot(Side.RIGHT, False)
                     if empty:
-                        empty_left = state
+                        empty_left = Position(state.position, state.section)
                         break
-                '''
+        
+        
 
 
             
-        #go(state, position1)
-        #field = pick_up(state)
-
-        #go(state, position2)
-        #place_lower(state)
-
-        #go(state, position3)
-        #place_upper(state)
-
-        #go(state, position5)
-
         go(state, Position(0, Section.INITIAL))
 
         break

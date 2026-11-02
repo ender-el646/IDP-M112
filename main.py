@@ -114,13 +114,13 @@ def raise_slowly(cur_servo, cur_angle, final_angle):
     #    sleep(0.05)
 
     if cur_angle > final_angle:
-        for i in reversed(range(final_angle, cur_angle, 1)):
+        for i in reversed(range(final_angle, cur_angle+2, 2)):
             cur_servo.set_angle(i)
-            sleep(0.02)
+            sleep(0.025)
     else:
-        for i in (range(cur_angle, final_angle, 1)):
+        for i in (range(cur_angle, final_angle+2, 2)):
             cur_servo.set_angle(i)
-            sleep(0.02)
+            sleep(0.025)
 
 #raise_slowly(servo1, 270, 0)
 #sleep(1)
@@ -131,10 +131,48 @@ def raise_slowly(cur_servo, cur_angle, final_angle):
 #servo1.set_angle(145)
 #sleep(1)
 
+yellow_led_pin = 2
+green_led_pin = 27
+red_led_pin = 28
+
+
+yellow_led = Pin(yellow_led_pin, Pin.OUT)
+green_led = Pin(green_led_pin, Pin.OUT)
+red_led = Pin(red_led_pin, Pin.OUT)
+
+yellow_led.value(0)
+green_led.value(0)
+red_led.value(0)
+
 
 '''
-raise_slowly(servo2, 240, 270)
-sleep(5)
+
+from machine import ADC, Pin
+import time
+
+hall = ADC(Pin(26))
+
+MV_PER_GAUSS = 0.5
+baseline = 2.067389
+
+def read_voltage(samples=16):
+    total = 0
+    for _ in range(samples):
+        total += hall.read_u16()
+    return (total / samples) * 3.3 / 65535
+
+
+
+while True:
+    v = read_voltage()
+    gauss = (v - baseline) * 1000 / MV_PER_GAUSS
+    #"north" +1 "south" -1 "none" 0
+    state = 1 if gauss > 20 else -1 if gauss < -20 else 0
+    #print("%.3f V  %7.1f G  magnet: %s" % (v, gauss, state))
+    print(f"gauss: {gauss}, state: {state}")
+    sleep(0.5)
+
+
 '''
 '''
 
@@ -160,28 +198,36 @@ sleep(1)
 sleep(100)
 
 '''
-
 '''
+
 from machine import Pin
 import time
 
 ir = Pin(22, Pin.IN)
-last = ir.value()
+last = ir.value()   
 
 while True:
     v = ir.value()
+    print(v)
     if v != last:
         print(v)
         last = v
     time.sleep_us(100)
+'''
+'''
 
+
+servo1.set_angle(270)
+sleep(1)
 
 '''
-    
 
+'''
 
 raise_slowly(servo2, 0, 270)
 sleep(5)
+'''
+
 '''
 
 servo1.set_angle(270)

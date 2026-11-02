@@ -10,7 +10,7 @@ vl53l0 = VL53L0X(i2c_bus)
 vl53l0.set_Vcsel_pulse_period(vl53l0.vcsel_period_type[0], 18)
 vl53l0.set_Vcsel_pulse_period(vl53l0.vcsel_period_type[1], 14)
 
-def get_average_dist(sample=10):
+def get_average_dist(sample=50):
     vl53l0.start()
 
 

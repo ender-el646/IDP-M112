@@ -3,7 +3,7 @@ import time
 
 ir = Pin(22, Pin.IN)
 
-yellow_led_pin = 27
+yellow_led_pin = 2
 yellow_led = Pin(yellow_led_pin, Pin.OUT)
 
 MAX_WAIT_TIME = 20
