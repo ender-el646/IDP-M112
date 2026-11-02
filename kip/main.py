@@ -90,7 +90,7 @@ while True:
                 go(state, empty_up)
                 place_upper(state, Side.LEFT)
 
-                for i in range(state.position, 7):
+                for i in range(state.position+1, 7):
                     go(state, Position(i, Section.UP))
                     empty = check_spot(Side.LEFT, True)
                     if empty:
@@ -101,7 +101,7 @@ while True:
                 go(state, empty_left)
                 place_lower(state)
                 
-                for i in range(state.position, 9):
+                for i in range(state.position+1, 9):
                     go(state, Position(i, Section.LEFT))
                     empty = check_spot(Side.RIGHT, False)
                     if empty:
@@ -117,7 +117,7 @@ while True:
                 place_upper(state, Side.LEFT)
 
 
-                for i in range(state.position, 7):
+                for i in range(state.position+1, 7):
                     go(state, Position(i, Section.UP))
                     empty = check_spot(Side.LEFT, True)
                     if empty:
@@ -130,7 +130,7 @@ while True:
                 go(state, empty_left)
                 place_lower(state)
                 
-                for i in range(state.position, 9):
+                for i in range(state.position+1, 9):
                     go(state, Position(i, Section.LEFT))
                     empty = check_spot(Side.RIGHT, False)
                     if empty:

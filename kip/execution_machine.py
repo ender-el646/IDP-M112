@@ -15,7 +15,11 @@ def elapsed(start):
 FORWARD = 1
 REVERSE = 0
 
+UP_RAMP_FACTOR = 0.8
+UP_SPEED_FACTOR = 0.8
+
 # debug constants
+DROP_WAIT_TIME = 0.5
 WAIT_TIME = 0.1
 
 # line follow constants
@@ -59,7 +63,7 @@ HOLD_HEIGHT = 90
 RAISE_UP_HEIGHT = 210
 INITIAL_WIDTH = 270
 PICK_UP_WIDTH = 116
-DROP_WIDTH = 150
+DROP_WIDTH = 170
 
 CHECK_LINE_FOLLOW_DURATION = 1.0
 DISTANCE_WITH_BOX_LOWER = 340
@@ -143,7 +147,7 @@ def follow_straight_line_sensors_to_axis_duration(direction=1):
     start = ticks_ms()
     duration_ms = int(SENSORS_TO_AXIS_DURATION * 1000)
     while ticks_diff(ticks_ms(), start) < duration_ms:
-        drive_on_line(direction, line_sensor.read_sensors(), 0.8)
+        drive_on_line(direction, line_sensor.read_sensors(), UP_SPEED_FACTOR)
         wait(LINE_FOLLOW_INTERVAL)
 
     motor.motors_off()
@@ -218,13 +222,13 @@ def drive_on_line(direction, sensors, factor=1.0):
     motor.set_motor(Side.LEFT, direction, speed - cut_left)
 
 
-def follow_straight_line(duration, direction=FORWARD):
+def follow_straight_line(duration, direction=FORWARD, speed_factor=1.0):
     motor.motors_off()
 
     start = ticks_ms()
     duration_ms = int(duration * 1000)
     while ticks_diff(ticks_ms(), start) < duration_ms:
-        drive_on_line(direction, line_sensor.read_sensors())
+        drive_on_line(direction, line_sensor.read_sensors(), speed_factor)
         wait(LINE_FOLLOW_INTERVAL)
 
     motor.motors_off()
@@ -507,7 +511,7 @@ def move_from_initial_up(end):
 
     ir_sensor.wait_until_green_light()
 
-    follow_straight_line(GO_UP_DURATION, FORWARD)
+    follow_straight_line(GO_UP_DURATION, FORWARD, UP_RAMP_FACTOR)
     wait()
     for _ in range(end.position):
         reach_line(FORWARD)
@@ -638,7 +642,7 @@ def place_lower(state):
     red_led.value(0)
     green_led.value(0)
 
-    wait()
+    wait(DROP_WAIT_TIME)
 
     leave_branch_rack_u_turn(current_side, True)
 
@@ -680,7 +684,7 @@ def place_upper(state, side):
     red_led.value(0)
     green_led.value(0)
 
-    wait()
+    wait(DROP_WAIT_TIME)
 
     leave_branch_rack_u_turn(opposite_side, True)
 
