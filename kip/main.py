@@ -67,7 +67,8 @@ while True:
         init()
 
         START_TIME = ticks_ms()
-        
+
+        #left checks and left 1 box        
         if elapsed() < THRESHOLD_TIME:
             for i in range(1, 7):
                 go(state, Position(i, Section.UP))
@@ -108,6 +109,7 @@ while True:
                         empty_left = Position(state.position, state.section)
                         break
         
+        #left 2 box        
         if elapsed() < THRESHOLD_TIME:
             go(state, Position(2, Section.LEFT))
             field = pick_up(state)
@@ -136,11 +138,63 @@ while True:
                     if empty:
                         empty_left = Position(state.position, state.section)
                         break
-        
-        
 
-
+        #right checks and right 1 box        
+        if elapsed() < THRESHOLD_TIME:
+            for i in range(1, 7):
+                go(state, Position(i, Section.UP))
+                empty = check_spot(Side.RIGHT, True)
+                if empty:
+                    empty_up = Position(state.position, state.section)
+                    break
             
+            for i in range(3, 9):
+                go(state, Position(i, Section.RIGHT))
+                empty = check_spot(Side.LEFT, False)
+                if empty:
+                    empty_left = Position(state.position, state.section)
+                    break
+
+            go(state, Position(1, Section.RIGHT))
+            field = pick_up(state)
+
+            if field == 1:
+                go(state, empty_up)
+                place_upper(state, Side.RIGHT)
+
+                for i in range(state.position+1, 7):
+                    go(state, Position(i, Section.UP))
+                    empty = check_spot(Side.RIGHT, True)
+                    if empty:
+                        empty_up = Position(state.position, state.section)
+                        break
+        
+            if field == -1:
+                go(state, empty_left)
+                place_lower(state)
+                
+                for i in range(state.position+1, 9):
+                    go(state, Position(i, Section.RIGHT))
+                    empty = check_spot(Side.LEFT, False)
+                    if empty:
+                        empty_left = Position(state.position, state.section)
+                        break
+
+
+        #right checks and right 2 box        
+        if elapsed() < THRESHOLD_TIME:
+            go(state, Position(2, Section.RIGHT))
+            field = pick_up(state)
+
+            if field == 1:
+                go(state, empty_up)
+                place_upper(state, Side.RIGHT)
+
+            if field == -1:
+                go(state, empty_left)
+                place_lower(state)
+
+
         go(state, Position(0, Section.INITIAL))
 
         break

@@ -15,8 +15,9 @@ def elapsed(start):
 FORWARD = 1
 REVERSE = 0
 
-UP_RAMP_FACTOR = 0.8
+RAMP_FACTOR = 0.8
 UP_SPEED_FACTOR = 0.8
+UP_MOVEMENT_FACTOR = 0.8
 
 # debug constants
 DROP_WAIT_TIME = 0.5
@@ -59,7 +60,7 @@ GO_UP_DURATION = 5.0
 
 INTIAL_HEIGHT = 270
 PICK_UP_HEIGHT = 0
-HOLD_HEIGHT = 90
+HOLD_HEIGHT = 110
 RAISE_UP_HEIGHT = 210
 INITIAL_WIDTH = 270
 PICK_UP_WIDTH = 116
@@ -165,7 +166,6 @@ def u_turn():
 
     wait(ROTATION_180_DURATION_MIN)
 
-
     while elapsed(start) <= ROTATION_180_DURATION_MAX:
             sensors = line_sensor.read_sensors()
     
@@ -240,15 +240,15 @@ def at_junction(sensors):
 def back_up(count):
     u_turn()
     for _ in range(count):
-        reach_line(FORWARD)
+        reach_line(FORWARD, speed_factor=UP_MOVEMENT_FACTOR)
     wait()
     follow_straight_line_sensors_to_axis_duration(FORWARD)
     wait()
     stationary_u_turn()
     wait()
-    reach_line(REVERSE, SENSORS_TO_AXIS_DURATION/2)
+    reach_line(REVERSE, SENSORS_TO_AXIS_DURATION/2, speed_factor=UP_MOVEMENT_FACTOR)
 
-def reach_line(direction=FORWARD, cooldown=0.2):
+def reach_line(direction=FORWARD, cooldown=0.2, speed_factor=1.0):
     wait()
     motor.motors_off()
 
@@ -265,7 +265,7 @@ def reach_line(direction=FORWARD, cooldown=0.2):
         else:
             left_junction = True
 
-        drive_on_line(direction, sensors)
+        drive_on_line(direction, sensors, speed_factor)
         wait(LINE_FOLLOW_INTERVAL)
 
     motor.motors_off()
@@ -273,7 +273,7 @@ def reach_line(direction=FORWARD, cooldown=0.2):
     return True
 
 
-def reach_line_end(cooldown=1):
+def reach_line_end(cooldown=1, speed_factor=1.0):
     wait()
     motor.motors_off()
 
@@ -289,7 +289,7 @@ def reach_line_end(cooldown=1):
         else:
             lost = 0
 
-        drive_on_line(FORWARD, sensors)
+        drive_on_line(FORWARD, sensors, speed_factor)
         wait(LINE_FOLLOW_INTERVAL)
 
     motor.motors_off()
@@ -398,13 +398,13 @@ def check_for_box():
 def pick_up_box():
 
     servo.servo_clamp.set_angle(INITIAL_WIDTH)
-    wait(2)
+    wait(1)
     raise_slowly(servo.servo_height, INTIAL_HEIGHT, PICK_UP_HEIGHT)
-    wait(2)
+    wait(1)
     servo.servo_clamp.set_angle(PICK_UP_WIDTH)
-    wait(2)
+    wait(1)
     raise_slowly(servo.servo_height, PICK_UP_HEIGHT, HOLD_HEIGHT)
-    wait(2)
+    wait(1)
 
 
 
@@ -443,7 +443,7 @@ def move_from_initial(end):
 def move_in_section(start, end):
     if end.position > start.position:
         for _ in range(end.position - start.position):
-            reach_line(FORWARD)
+            reach_line(FORWARD, speed_factor=UP_MOVEMENT_FACTOR)
     else:
         #u_turn()
         #for _ in range(start.position - end.position):
@@ -475,9 +475,9 @@ def move_to_initial(start):
     if start.section == Section.UP:
         u_turn()
         for _ in range(start.position-1):
-            reach_line(FORWARD)
+            reach_line(FORWARD, RAMP_FACTOR)
         wait()
-        reach_line_end(FORWARD)
+        reach_line_end(FORWARD, RAMP_FACTOR)
         wait()
         u_turn()
         wait()
@@ -511,7 +511,7 @@ def move_from_initial_up(end):
 
     ir_sensor.wait_until_green_light()
 
-    follow_straight_line(GO_UP_DURATION, FORWARD, UP_RAMP_FACTOR)
+    follow_straight_line(GO_UP_DURATION, FORWARD, RAMP_FACTOR)
     wait()
     for _ in range(end.position):
         reach_line(FORWARD)
@@ -589,7 +589,7 @@ def pick_up(state):
     wait()
 
     start = ticks_ms()
-    duration_ms = int(0.1 * 1000)
+    duration_ms = int(0.05 * 1000)
     while ticks_diff(ticks_ms(), start) < duration_ms:
         drive_on_line(REVERSE, line_sensor.read_sensors())
         wait(LINE_FOLLOW_INTERVAL)
@@ -629,10 +629,16 @@ def place_lower(state):
 
     rotation_from_front(opposite(current_side))
 
-    raise_slowly(servo.servo_height, HOLD_HEIGHT, RAISE_UP_HEIGHT)
+    wait()
+
+    follow_straight_line(1.0, FORWARD)
 
     wait()
 
+    raise_slowly(servo.servo_height, HOLD_HEIGHT, RAISE_UP_HEIGHT)
+
+    wait()
+    
     reach_line_end()
 
     wait()
@@ -647,6 +653,7 @@ def place_lower(state):
     leave_branch_rack_u_turn(current_side, True)
 
     raise_slowly(servo.servo_height, RAISE_UP_HEIGHT, INTIAL_HEIGHT)
+    wait(1)
     servo.servo_clamp.set_angle(INITIAL_WIDTH)
 
     wait()
@@ -690,17 +697,17 @@ def place_upper(state, side):
 
     raise_slowly(servo.servo_height, HOLD_HEIGHT, INTIAL_HEIGHT)
 
+    wait(1)
+
     servo.servo_clamp.set_angle(INITIAL_WIDTH)
 
-    wait(2)
+    wait(1)
 
 
 
 def raise_slowly(cur_servo, cur_angle, final_angle):
 
     cur_servo.set_angle(final_angle)
-
-    sleep(1)
 
     return
 
