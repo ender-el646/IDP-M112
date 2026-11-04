@@ -29,7 +29,7 @@ class Servo:
 servo_clamp = Servo(Pin(15)) 
 servo_height = Servo(Pin(13)) 
 
-servo_height.set_angle(270)
+servo_clamp.set_angle(142)
 time.sleep(2)
 
 #servo1 = Servo(Pin(15)) # Connected to Servo 1

@@ -7,7 +7,7 @@ import hall
 START_TIME = ticks_ms()
 
 FINISH_TIME = 300
-THRESHOLD_TIME = 240
+THRESHOLD_TIME = 260
 
 def elapsed():
     # seconds since program start
@@ -54,8 +54,9 @@ yellow_led.value(1)
 green_led.value(0)
 red_led.value(0)
 
-empty_up = Position(1, Section.UP)
-empty_right = None
+empty_up_left = Position(1, Section.UP)
+empty_up_right = Position(1, Section.UP)
+empty_right = Position(3, Section.RIGHT)
 empty_left = Position(3, Section.LEFT)
 
 while True:
@@ -74,7 +75,14 @@ while True:
                 go(state, Position(i, Section.UP))
                 empty = check_spot(Side.LEFT, True)
                 if empty:
-                    empty_up = Position(state.position, state.section)
+                    empty_up_left = Position(state.position, state.section)
+                    break
+
+            for i in range(1, 7):
+                go(state, Position(i, Section.UP))
+                empty = check_spot(Side.RIGHT, True)
+                if empty:
+                    empty_up_right = Position(state.position, state.section)
                     break
             
             for i in range(3, 9):
@@ -88,14 +96,14 @@ while True:
             field = pick_up(state)
             
             if field == 1:
-                go(state, empty_up)
+                go(state, empty_up_left)
                 place_upper(state, Side.LEFT)
 
                 for i in range(state.position+1, 7):
                     go(state, Position(i, Section.UP))
                     empty = check_spot(Side.LEFT, True)
                     if empty:
-                        empty_up = Position(state.position, state.section)
+                        empty_up_left = Position(state.position, state.section)
                         break
 
             if field == -1:
@@ -115,69 +123,67 @@ while True:
             field = pick_up(state)
 
             if field == 1:
-                go(state, empty_up)
+                go(state, empty_up_left)
                 place_upper(state, Side.LEFT)
 
-
+                '''
                 for i in range(state.position+1, 7):
                     go(state, Position(i, Section.UP))
                     empty = check_spot(Side.LEFT, True)
                     if empty:
-                        empty_up = Position(state.position, state.section)
+                        empty_up_left = Position(state.position, state.section)
                         break
+                '''
         
         
 
             if field == -1:
                 go(state, empty_left)
                 place_lower(state)
-                
+
+
+                '''
                 for i in range(state.position+1, 9):
                     go(state, Position(i, Section.LEFT))
                     empty = check_spot(Side.RIGHT, False)
                     if empty:
                         empty_left = Position(state.position, state.section)
                         break
+                '''
 
         #right checks and right 1 box        
         if elapsed() < THRESHOLD_TIME:
-            for i in range(1, 7):
-                go(state, Position(i, Section.UP))
-                empty = check_spot(Side.RIGHT, True)
-                if empty:
-                    empty_up = Position(state.position, state.section)
-                    break
             
             for i in range(3, 9):
                 go(state, Position(i, Section.RIGHT))
                 empty = check_spot(Side.LEFT, False)
                 if empty:
-                    empty_left = Position(state.position, state.section)
+                    empty_right = Position(state.position, state.section)
                     break
 
             go(state, Position(1, Section.RIGHT))
             field = pick_up(state)
 
             if field == 1:
-                go(state, empty_up)
+                go(state, empty_up_right)
                 place_upper(state, Side.RIGHT)
 
                 for i in range(state.position+1, 7):
                     go(state, Position(i, Section.UP))
                     empty = check_spot(Side.RIGHT, True)
                     if empty:
-                        empty_up = Position(state.position, state.section)
+                        empty_up_right = Position(state.position, state.section)
                         break
         
             if field == -1:
-                go(state, empty_left)
+                go(state, empty_right)
                 place_lower(state)
                 
                 for i in range(state.position+1, 9):
                     go(state, Position(i, Section.RIGHT))
                     empty = check_spot(Side.LEFT, False)
                     if empty:
-                        empty_left = Position(state.position, state.section)
+                        empty_right = Position(state.position, state.section)
                         break
 
 
@@ -187,11 +193,11 @@ while True:
             field = pick_up(state)
 
             if field == 1:
-                go(state, empty_up)
+                go(state, empty_up_right)
                 place_upper(state, Side.RIGHT)
 
             if field == -1:
-                go(state, empty_left)
+                go(state, empty_right)
                 place_lower(state)
 
 

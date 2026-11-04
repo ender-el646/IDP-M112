@@ -10,7 +10,7 @@ vl53l0 = VL53L0X(i2c_bus)
 vl53l0.set_Vcsel_pulse_period(vl53l0.vcsel_period_type[0], 18)
 vl53l0.set_Vcsel_pulse_period(vl53l0.vcsel_period_type[1], 14)
 
-def get_average_dist(sample=50):
+def get_average_dist(sample=25):
     vl53l0.start()
 
 
@@ -22,7 +22,7 @@ def get_average_dist(sample=50):
         if reading is not None and reading < 8000:  # skip failed/out-of-range reads
             distance_sum += reading
             count += 1
-        sleep_ms(30)
+        sleep_ms(10)
     
     vl53l0.stop()
 

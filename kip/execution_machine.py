@@ -15,19 +15,25 @@ def elapsed(start):
 FORWARD = 1
 REVERSE = 0
 
-RAMP_FACTOR = 0.8
-UP_SPEED_FACTOR = 0.8
-UP_MOVEMENT_FACTOR = 0.8
+REACH_LINE_MID = 0.15
+REVERSE_CUT_FACTOR = 0.75
+PICK_UP_CUT_FACTOR = 1.1
+
+RAMP_FACTOR = 0.7
+RAMP_FACTOR_UP = 0.7
+UP_SPEED_FACTOR = 0.9
+UP_MOVEMENT_FACTOR = 0.9
+PICK_UP_SPEED = 0.5
 
 # debug constants
 DROP_WAIT_TIME = 0.5
-WAIT_TIME = 0.1
+WAIT_TIME = 0.03
 
 # line follow constants
 LINE_FOLLOW_INTERVAL = 0.005
 WAIT_INTERVAL = 0.005
 SMALL_CORRECTION = 30
-LARGE_CORRECTION = 50
+LARGE_CORRECTION = 40
 LINE_FOLLOW_SPEED = 100
 
 TURNING_SPEED = 70
@@ -36,34 +42,34 @@ ROTATE_SLEEP = 0.001
 REVERSE_FACTOR = 0.5
 LINE_FOLLOW_REVERSE_SPEED = 100
 
-LINE_LOST_SAMPLES = 2
+LINE_LOST_SAMPLES = 1
 
 # need to calibrate
 
 # maneuvers
-SENSORS_TO_AXIS_DURATION = 0.6
+SENSORS_TO_AXIS_DURATION = 0.59
 ROTATION_90_DURATION = 1.0
 
-ROTATION_90_DURATION_MIN = 0.8
+ROTATION_90_DURATION_MIN = 0.75
 ROTATION_90_DURATION_MAX = 1.2
 
-ROTATION_180_DURATION_MIN = 1.7
-ROTATION_180_DURATION_MAX = 2.1
+ROTATION_180_DURATION_MIN = 1.5
+ROTATION_180_DURATION_MAX = 2.2
 
 ROTATION_270_DURATION = 2.6
-ROTATION_270_DURATION_MIN = 2.3
+ROTATION_270_DURATION_MIN = 2.2
 ROTATION_270_DURATION_MAX = 2.9
 
 ROTATION_CORRECTION_TIME = 0.15
 
-GO_UP_DURATION = 5.0
+GO_UP_DURATION = 6.0
 
 INTIAL_HEIGHT = 270
 PICK_UP_HEIGHT = 0
 HOLD_HEIGHT = 110
 RAISE_UP_HEIGHT = 210
 INITIAL_WIDTH = 270
-PICK_UP_WIDTH = 116
+PICK_UP_WIDTH = 130
 DROP_WIDTH = 170
 
 CHECK_LINE_FOLLOW_DURATION = 1.0
@@ -171,6 +177,9 @@ def u_turn():
     
             if sensors[1] == 1 and sensors[2] == 1:
                 motor.motors_off()
+                follow_straight_line_sensors_to_axis_duration(REVERSE)
+                wait()
+                motor.motors_off()
                 return
     
             wait(ROTATE_SLEEP)
@@ -205,8 +214,15 @@ def stationary_u_turn():
     motor.motors_off()
     wait()
 
-def drive_on_line(direction, sensors, factor=1.0):
+def drive_on_line(direction, sensors, factor=1.0, cut_factor=1.0):
     cut_left, cut_right = correction(sensors)
+
+    cut_left = cut_left*cut_factor
+    cut_right = cut_right*cut_factor
+
+    if direction == REVERSE:
+        cut_right = cut_right*REVERSE_CUT_FACTOR
+        cut_left = cut_left*REVERSE_CUT_FACTOR
 
     speed = LINE_FOLLOW_SPEED
 
@@ -227,6 +243,9 @@ def follow_straight_line(duration, direction=FORWARD, speed_factor=1.0):
 
     start = ticks_ms()
     duration_ms = int(duration * 1000)
+
+    counter = 1
+
     while ticks_diff(ticks_ms(), start) < duration_ms:
         drive_on_line(direction, line_sensor.read_sensors(), speed_factor)
         wait(LINE_FOLLOW_INTERVAL)
@@ -247,14 +266,17 @@ def back_up(count):
     stationary_u_turn()
     wait()
     reach_line(REVERSE, SENSORS_TO_AXIS_DURATION/2, speed_factor=UP_MOVEMENT_FACTOR)
+    follow_straight_line(REACH_LINE_MID, REVERSE)
 
-def reach_line(direction=FORWARD, cooldown=0.2, speed_factor=1.0):
+def reach_line(direction=FORWARD, cooldown=0.35, speed_factor=1.0, gaps=999.0, cut_factor=1.0):
     wait()
     motor.motors_off()
 
     left_junction = False
 
     start = ticks_ms()
+
+    counter = 1
 
     while True:
         sensors = line_sensor.read_sensors()
@@ -265,7 +287,12 @@ def reach_line(direction=FORWARD, cooldown=0.2, speed_factor=1.0):
         else:
             left_junction = True
 
-        drive_on_line(direction, sensors, speed_factor)
+        if counter*gaps < elapsed(start):
+            counter += 1
+            motor.motors_off()
+            wait()
+
+        drive_on_line(direction, sensors, speed_factor, cut_factor=cut_factor)
         wait(LINE_FOLLOW_INTERVAL)
 
     motor.motors_off()
@@ -273,7 +300,7 @@ def reach_line(direction=FORWARD, cooldown=0.2, speed_factor=1.0):
     return True
 
 
-def reach_line_end(cooldown=1, speed_factor=1.0):
+def reach_line_end(cooldown=1.0, speed_factor=1.0):
     wait()
     motor.motors_off()
 
@@ -458,7 +485,7 @@ def move_from_initial_side(end):
     to_side = section_side(end.section)  # side of the robot the section is on
 
     # back up until the bottom line, turn towards the section, drive to the corner
-    reach_line(REVERSE)
+    reach_line(REVERSE, cooldown=0.0)
 
     rotation_from_front(to_side)
 
@@ -475,11 +502,15 @@ def move_to_initial(start):
     if start.section == Section.UP:
         u_turn()
         for _ in range(start.position-1):
-            reach_line(FORWARD, RAMP_FACTOR)
+            reach_line(FORWARD, speed_factor=RAMP_FACTOR)
         wait()
-        reach_line_end(FORWARD, RAMP_FACTOR)
+        reach_line_end(5.0, RAMP_FACTOR)
+        wait()
+        follow_straight_line(0.15, REVERSE)
         wait()
         u_turn()
+        wait()
+        follow_straight_line(0.4, FORWARD)
         wait()
 
     else:
@@ -511,9 +542,10 @@ def move_from_initial_up(end):
 
     ir_sensor.wait_until_green_light()
 
-    follow_straight_line(GO_UP_DURATION, FORWARD, RAMP_FACTOR)
+    follow_straight_line(GO_UP_DURATION, FORWARD, speed_factor=RAMP_FACTOR_UP)
+    reach_line(FORWARD, speed_factor=RAMP_FACTOR_UP, gaps=0.7)
     wait()
-    for _ in range(end.position):
+    for _ in range(end.position-1):
         reach_line(FORWARD)
     wait()
 
@@ -550,7 +582,7 @@ def leave_branch_rack_u_turn(return_side, entered):
         wait()
 
     wait()
-    follow_straight_line_sensors_to_axis_duration(REVERSE)
+    reach_line(REVERSE)
     wait()
 
 def leave_branch_rack(return_side, entered):
@@ -572,14 +604,15 @@ def pick_up(state):
 
     # go up to the box
     rotation_from_front(opposite(current_side))
-    reach_line(FORWARD)
+
+    reach_line(FORWARD, speed_factor=PICK_UP_SPEED, cut_factor=PICK_UP_CUT_FACTOR)
 
     wait()
 
     motor.motors_off()
 
     start = ticks_ms()
-    duration_ms = int(0.25 * 1000)
+    duration_ms = int(0.35 * 1000)
     while ticks_diff(ticks_ms(), start) < duration_ms:
         drive_on_line(FORWARD, line_sensor.read_sensors())
         wait(LINE_FOLLOW_INTERVAL)
@@ -589,7 +622,7 @@ def pick_up(state):
     wait()
 
     start = ticks_ms()
-    duration_ms = int(0.05 * 1000)
+    duration_ms = int(0.15 * 1000)
     while ticks_diff(ticks_ms(), start) < duration_ms:
         drive_on_line(REVERSE, line_sensor.read_sensors())
         wait(LINE_FOLLOW_INTERVAL)
@@ -610,7 +643,7 @@ def pick_up(state):
     motor.motors_off()
 
     start = ticks_ms()
-    duration_ms = int(0.2 * 1000)
+    duration_ms = int(0.5 * 1000)
     while ticks_diff(ticks_ms(), start) < duration_ms:
         drive_on_line(REVERSE, line_sensor.read_sensors())
         wait(LINE_FOLLOW_INTERVAL)
