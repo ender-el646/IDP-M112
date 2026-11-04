@@ -16,7 +16,7 @@ FORWARD = 1
 REVERSE = 0
 
 REACH_LINE_MID = 0.15
-REVERSE_CUT_FACTOR = 0.75
+REVERSE_CUT_FACTOR = 0.65
 PICK_UP_CUT_FACTOR = 1.1
 
 RAMP_FACTOR = 0.7
@@ -151,8 +151,13 @@ def correction(sensors):
 def follow_straight_line_sensors_to_axis_duration(direction=1):
     motor.motors_off()
 
+    additional_time = 0.0
+
+    if direction == REVERSE:
+        additional_time=0.02
+
     start = ticks_ms()
-    duration_ms = int(SENSORS_TO_AXIS_DURATION * 1000)
+    duration_ms = int((SENSORS_TO_AXIS_DURATION+additional_time) * 1000)
     while ticks_diff(ticks_ms(), start) < duration_ms:
         drive_on_line(direction, line_sensor.read_sensors(), UP_SPEED_FACTOR)
         wait(LINE_FOLLOW_INTERVAL)

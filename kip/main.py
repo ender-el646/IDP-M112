@@ -7,7 +7,7 @@ import hall
 START_TIME = ticks_ms()
 
 FINISH_TIME = 300
-THRESHOLD_TIME = 260
+THRESHOLD_TIME = 265
 
 def elapsed():
     # seconds since program start
@@ -167,35 +167,7 @@ while True:
             if field == 1:
                 go(state, empty_up_right)
                 place_upper(state, Side.RIGHT)
-
-                for i in range(state.position+1, 7):
-                    go(state, Position(i, Section.UP))
-                    empty = check_spot(Side.RIGHT, True)
-                    if empty:
-                        empty_up_right = Position(state.position, state.section)
-                        break
         
-            if field == -1:
-                go(state, empty_right)
-                place_lower(state)
-                
-                for i in range(state.position+1, 9):
-                    go(state, Position(i, Section.RIGHT))
-                    empty = check_spot(Side.LEFT, False)
-                    if empty:
-                        empty_right = Position(state.position, state.section)
-                        break
-
-
-        #right checks and right 2 box        
-        if elapsed() < THRESHOLD_TIME:
-            go(state, Position(2, Section.RIGHT))
-            field = pick_up(state)
-
-            if field == 1:
-                go(state, empty_up_right)
-                place_upper(state, Side.RIGHT)
-
             if field == -1:
                 go(state, empty_right)
                 place_lower(state)
