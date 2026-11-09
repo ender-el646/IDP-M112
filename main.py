@@ -6,6 +6,7 @@ import hall
 
 START_TIME = ticks_ms()
 
+# finish time and after what point to not search for a new box  
 FINISH_TIME = 300
 THRESHOLD_TIME = 265
 
@@ -33,14 +34,11 @@ def go(state, target):
 
 state = State()
 
-position1 = Position(1, Section.LEFT)
-position2 = Position(4, Section.LEFT)
-position3 = Position(3, Section.UP)
-position5 = Position(0, Section.INITIAL)
-
+#button pin
 button_pin = 10
 button = Pin(button_pin, Pin.IN, Pin.PULL_UP)
 
+#LEDs pins
 yellow_led_pin = 2
 green_led_pin = 27
 red_led_pin = 28
@@ -50,26 +48,32 @@ yellow_led = Pin(yellow_led_pin, Pin.OUT)
 green_led = Pin(green_led_pin, Pin.OUT)
 red_led = Pin(red_led_pin, Pin.OUT)
 
+#initially yellow LED is on and other LEDs are off
 yellow_led.value(1)
 green_led.value(0)
 red_led.value(0)
 
+#stored positions of empty racks
 empty_up_left = Position(1, Section.UP)
 empty_up_right = Position(1, Section.UP)
 empty_right = Position(3, Section.RIGHT)
 empty_left = Position(3, Section.LEFT)
 
 while True:
+
+    # dont start until the button is pressed
     
     sleep(0.05)
 
     if button.value() == 0:
 
+        #reset servo positions
         init()
 
+        #start the time counter
         START_TIME = ticks_ms()
 
-        #left checks and left 1 box        
+        #check for empty racks at the A rack at the bottom and top and pick up and first left box        
         if elapsed() < THRESHOLD_TIME:
             for i in range(1, 7):
                 go(state, Position(i, Section.UP))
@@ -117,7 +121,7 @@ while True:
                         empty_left = Position(state.position, state.section)
                         break
         
-        #left 2 box        
+        #check for empty racks at the A rack at the bottom and top and pick up and second left box        
         if elapsed() < THRESHOLD_TIME:
             go(state, Position(2, Section.LEFT))
             field = pick_up(state)
@@ -151,7 +155,7 @@ while True:
                         break
                 '''
 
-        #right checks and right 1 box        
+        #check for empty racks at the B rack at the bottom and top and pick up and first right box        
         if elapsed() < THRESHOLD_TIME:
             
             for i in range(3, 9):
@@ -173,11 +177,15 @@ while True:
                 place_lower(state)
 
 
+
+        #return to start position
         go(state, Position(0, Section.INITIAL))
 
         break
 
 
+
+# full logic if the robot had enough time to pick up more than 3 boxes
 '''
 
 while elapsed() < FINISH_TIME:

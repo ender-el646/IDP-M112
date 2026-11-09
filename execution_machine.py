@@ -15,6 +15,7 @@ def elapsed(start):
 FORWARD = 1
 REVERSE = 0
 
+#movement constants
 REACH_LINE_MID = 0.15
 REVERSE_CUT_FACTOR = 0.65
 PICK_UP_CUT_FACTOR = 1.1
@@ -46,7 +47,7 @@ LINE_LOST_SAMPLES = 1
 
 # need to calibrate
 
-# maneuvers
+# maneuvers constants
 SENSORS_TO_AXIS_DURATION = 0.59
 ROTATION_90_DURATION = 1.0
 
@@ -64,6 +65,7 @@ ROTATION_CORRECTION_TIME = 0.15
 
 GO_UP_DURATION = 6.0
 
+#servo calibrated positions
 INTIAL_HEIGHT = 270
 PICK_UP_HEIGHT = 0
 HOLD_HEIGHT = 110
@@ -90,12 +92,14 @@ red_led = Pin(red_led_pin, Pin.OUT)
 
 counter = 0
 
+#reset servos to initial positions
 def init():
     servo.servo_height.set_angle(INTIAL_HEIGHT)
     sleep(1)
     servo.servo_clamp.set_angle(INITIAL_WIDTH)
     sleep(1)
 
+# splits longer sleep times into shorter, so the blinking yellow light could continue blinking
 def wait(wait_duration=WAIT_TIME):
     global counter
     global orange_led_value
@@ -124,15 +128,15 @@ def wait(wait_duration=WAIT_TIME):
 
             yellow_led.value(orange_led_value)
 
-
+# get opposite side
 def opposite(side):
     return Side.LEFT if side == Side.RIGHT else Side.RIGHT
 
-
+# get side of section
 def section_side(section):
     return Side.RIGHT if section == Section.RIGHT else Side.LEFT
 
-
+# readjusts power on the motors to smoothly follow the line and if it slightly goes, then it turns back on the line 
 def correction(sensors):
     cut_left = 0
     cut_right = 0
@@ -148,6 +152,7 @@ def correction(sensors):
 
     return cut_left, cut_right
 
+# move a distance of the length between white/black sensors and wheels forwards or in reverse 
 def follow_straight_line_sensors_to_axis_duration(direction=1):
     motor.motors_off()
 
@@ -164,6 +169,7 @@ def follow_straight_line_sensors_to_axis_duration(direction=1):
 
     motor.motors_off()
 
+# u_turn without changing the position of white and black sensors
 def u_turn():
     wait()
     follow_straight_line_sensors_to_axis_duration()  # put axle on the junction
@@ -194,6 +200,8 @@ def u_turn():
     follow_straight_line_sensors_to_axis_duration(REVERSE)
     wait()
 
+
+# u_turn without changing the position of wheels
 def stationary_u_turn():
     motor.motors_off()
 
@@ -219,6 +227,7 @@ def stationary_u_turn():
     motor.motors_off()
     wait()
 
+#function that sets appropriate motor power to move along the line
 def drive_on_line(direction, sensors, factor=1.0, cut_factor=1.0):
     cut_left, cut_right = correction(sensors)
 
@@ -242,7 +251,7 @@ def drive_on_line(direction, sensors, factor=1.0, cut_factor=1.0):
     motor.set_motor(Side.RIGHT, direction, speed - cut_right)
     motor.set_motor(Side.LEFT, direction, speed - cut_left)
 
-
+# moves along a straight line for a set amount of time
 def follow_straight_line(duration, direction=FORWARD, speed_factor=1.0):
     motor.motors_off()
 
@@ -257,10 +266,11 @@ def follow_straight_line(duration, direction=FORWARD, speed_factor=1.0):
 
     motor.motors_off()
 
-
+# checks if white/black sensors indicate a junction
 def at_junction(sensors):
     return bool((sensors[1] or sensors[2]) and (sensors[0] or sensors[3]))
 
+# goes back in sections
 def back_up(count):
     u_turn()
     for _ in range(count):
@@ -273,6 +283,7 @@ def back_up(count):
     reach_line(REVERSE, SENSORS_TO_AXIS_DURATION/2, speed_factor=UP_MOVEMENT_FACTOR)
     follow_straight_line(REACH_LINE_MID, REVERSE)
 
+# move forwards/backwards until it reaches a junction 
 def reach_line(direction=FORWARD, cooldown=0.35, speed_factor=1.0, gaps=999.0, cut_factor=1.0):
     wait()
     motor.motors_off()
