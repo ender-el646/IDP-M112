@@ -1,135 +1,45 @@
-'''from test_led import test_led
-from test_pwm import test_pwm
-from test_input import test_input_poll
+from utime import sleep, ticks_ms, ticks_diff
+from robot_types import Section, Goal, State, Position, Side
+from execution_machine import move, pick_up, place_lower, place_upper, reach_line, check_spot, init
+from machine import Pin
+import hall
 
-from test_linear_actuator import test_actuator1
-from test_tcs3472 import test_tcs3472
-from test_mfrc522 import test_mfrc522
-from test_TMF8x01_get_distance import test_TMF8x01_get_distance
-from test_STU_22L_IO_Mode import test_STU_22L_IO_Mode
-from test_STU_22L_UART import test_STU_22L_UART
-from test_tiny_code_reader import test_tiny_code_reader'''
-import motor
-import servo
-from test_vl53l0x import test_vl53l0x
-import line_sensor
-import line_follow
-from utime import sleep, sleep_ms, ticks_diff, ticks_ms, sleep_us
-print("Start Running")
+START_TIME = ticks_ms()
 
-# Uncomment the test to run
-# test_led()
-# test_led_pwm()
-# test_input_poll()
-# test_motor3()
-# test_tcs3472()
-# test_actuator1()
-# test_mfrc522()
-# test_TMF8x01_get_distance()
-# test_STU_22L_IO_Mode()
-# test_STU_22L_UART()
-# test_tiny_code_reader()
+FINISH_TIME = 300
+THRESHOLD_TIME = 265
 
-'''
-test_vl53l0x()
+def elapsed():
+    # seconds since program start
+    return ticks_diff(ticks_ms(), START_TIME) / 1000
 
-# 1st turning point: stop for 1 s, then go straight
-line_follow.follow_to_junction()
-sleep(1)
+INITIAL_PLACE = Position(0, Section.INITIAL)
 
-# 2nd turning point: turn left
-line_follow.follow_to_junction()
-line_follow.turn_left()
+PICK_UPS = [Position(1, Section.RIGHT),
+            Position(2, Section.RIGHT),
+            Position(1, Section.LEFT),
+            Position(2, Section.LEFT)]
 
-line_follow.follow_to_junction()
-sleep(1)
-line_follow.left180()
+RIGHT_PLACES = [Position(i, Section.RIGHT) for i in range(3, 9)]
+LEFT_PLACES = [Position(i, Section.LEFT) for i in range(3, 9)]
+UP_PLACES = [Position(i, Section.UP) for i in range(1, 7)]
 
-motor.motors_off()
-print("main.py Done!")
-'''
-
-'''
-
-from machine import ADC, Pin
-import time
-
-hall = ADC(Pin(26))        # physical pin 31 = GP26 = ADC0
-
-def read_voltage(samples=16):
-    total = 0
-    for _ in range(samples):
-        total += hall.read_u16()
-    return (total / samples) * 3.3 / 65535
-
-# Calibrate with no magnet nearby (idle output is about half the supply)
-time.sleep(1)
-baseline = read_voltage(64)
-print("Baseline: %.3f V" % baseline)
-
-MV_PER_GAUSS = 1.5        # about 1.4 mV/G at 5 V for a 49E, scaled to 3.3 V. Adjust for your part.
-
-while True:
-    v = read_voltage()
-    gauss = (v - baseline) * 1000 / MV_PER_GAUSS
-    state = "South" if gauss > 20 else "North" if gauss < -20 else "none"
-    print("%.3f V  %7.1f G  magnet: %s" % (v, gauss, state))
-    time.sleep(0.1)
+def go(state, target):
+    # drive to target, then update the tracked state
+    move(state, target)
+    state.position = target.position
+    state.section = target.section
 
 
-'''
+state = State()
 
-from machine import ADC, Pin
-import time
+position1 = Position(1, Section.LEFT)
+position2 = Position(4, Section.LEFT)
+position3 = Position(3, Section.UP)
+position5 = Position(0, Section.INITIAL)
 
-servo1 = servo.Servo(Pin(15)) 
-servo2 = servo.Servo(Pin(13)) 
-
-def test_positions():
-    while True:
-        
-        #print("Move to 0°")
-        #servo1.set_angle(0)
-        #time.sleep(5)
-
-        #print("Move to 135° (centre)")
-        #servo1.set_angle(135)
-        #time.sleep(5)
-
-        #print("Move to 270°")
-        #servo2.set_angle(270)
-        #time.sleep(5)
-
-        for i in range(180, 270, 5):
-            servo1.set_angle(i)
-            sleep(0.05)
-
-        servo1.set_angle(180)
-        sleep(1)
-        
-
-def raise_slowly(cur_servo, cur_angle, final_angle):
-    #for i in range(cur_angle, final_angle, 5):
-    #    cur_servo.set_angle(i)
-    #    sleep(0.05)
-
-    if cur_angle > final_angle:
-        for i in reversed(range(final_angle, cur_angle+2, 2)):
-            cur_servo.set_angle(i)
-            sleep(0.025)
-    else:
-        for i in (range(cur_angle, final_angle+2, 2)):
-            cur_servo.set_angle(i)
-            sleep(0.025)
-
-#raise_slowly(servo1, 270, 0)
-#sleep(1)
-#servo2.set_angle(70)
-#sleep(2)
-#servo2.set_angle(270)
-#sleep(1)
-#servo1.set_angle(145)
-#sleep(1)
+button_pin = 10
+button = Pin(button_pin, Pin.IN, Pin.PULL_UP)
 
 yellow_led_pin = 2
 green_led_pin = 27
@@ -140,153 +50,176 @@ yellow_led = Pin(yellow_led_pin, Pin.OUT)
 green_led = Pin(green_led_pin, Pin.OUT)
 red_led = Pin(red_led_pin, Pin.OUT)
 
-yellow_led.value(0)
+yellow_led.value(1)
 green_led.value(0)
 red_led.value(0)
 
-
-'''
-
-from machine import ADC, Pin
-import time
-
-hall = ADC(Pin(26))
-
-MV_PER_GAUSS = 0.5
-baseline = 2.067389
-
-def read_voltage(samples=16):
-    total = 0
-    for _ in range(samples):
-        total += hall.read_u16()
-    return (total / samples) * 3.3 / 65535
-
-
+empty_up_left = Position(1, Section.UP)
+empty_up_right = Position(1, Section.UP)
+empty_right = Position(3, Section.RIGHT)
+empty_left = Position(3, Section.LEFT)
 
 while True:
-    v = read_voltage()
-    gauss = (v - baseline) * 1000 / MV_PER_GAUSS
-    #"north" +1 "south" -1 "none" 0
-    state = 1 if gauss > 20 else -1 if gauss < -20 else 0
-    #print("%.3f V  %7.1f G  magnet: %s" % (v, gauss, state))
-    print(f"gauss: {gauss}, state: {state}")
-    sleep(0.5)
+    
+    sleep(0.05)
+
+    if button.value() == 0:
+
+        init()
+
+        START_TIME = ticks_ms()
+
+        #left checks and left 1 box        
+        if elapsed() < THRESHOLD_TIME:
+            for i in range(1, 7):
+                go(state, Position(i, Section.UP))
+                empty = check_spot(Side.LEFT, True)
+                if empty:
+                    empty_up_left = Position(state.position, state.section)
+                    break
+
+            for i in range(1, 7):
+                go(state, Position(i, Section.UP))
+                empty = check_spot(Side.RIGHT, True)
+                if empty:
+                    empty_up_right = Position(state.position, state.section)
+                    break
+            
+            for i in range(3, 9):
+                go(state, Position(i, Section.LEFT))
+                empty = check_spot(Side.RIGHT, False)
+                if empty:
+                    empty_left = Position(state.position, state.section)
+                    break
+
+            go(state, Position(1, Section.LEFT))
+            field = pick_up(state)
+            
+            if field == 1:
+                go(state, empty_up_left)
+                place_upper(state, Side.LEFT)
+
+                for i in range(state.position+1, 7):
+                    go(state, Position(i, Section.UP))
+                    empty = check_spot(Side.LEFT, True)
+                    if empty:
+                        empty_up_left = Position(state.position, state.section)
+                        break
+
+            if field == -1:
+                go(state, empty_left)
+                place_lower(state)
+                
+                for i in range(state.position+1, 9):
+                    go(state, Position(i, Section.LEFT))
+                    empty = check_spot(Side.RIGHT, False)
+                    if empty:
+                        empty_left = Position(state.position, state.section)
+                        break
+        
+        #left 2 box        
+        if elapsed() < THRESHOLD_TIME:
+            go(state, Position(2, Section.LEFT))
+            field = pick_up(state)
+
+            if field == 1:
+                go(state, empty_up_left)
+                place_upper(state, Side.LEFT)
+
+                '''
+                for i in range(state.position+1, 7):
+                    go(state, Position(i, Section.UP))
+                    empty = check_spot(Side.LEFT, True)
+                    if empty:
+                        empty_up_left = Position(state.position, state.section)
+                        break
+                '''
+        
+        
+
+            if field == -1:
+                go(state, empty_left)
+                place_lower(state)
+
+
+                '''
+                for i in range(state.position+1, 9):
+                    go(state, Position(i, Section.LEFT))
+                    empty = check_spot(Side.RIGHT, False)
+                    if empty:
+                        empty_left = Position(state.position, state.section)
+                        break
+                '''
+
+        #right checks and right 1 box        
+        if elapsed() < THRESHOLD_TIME:
+            
+            for i in range(3, 9):
+                go(state, Position(i, Section.RIGHT))
+                empty = check_spot(Side.LEFT, False)
+                if empty:
+                    empty_right = Position(state.position, state.section)
+                    break
+
+            go(state, Position(1, Section.RIGHT))
+            field = pick_up(state)
+
+            if field == 1:
+                go(state, empty_up_right)
+                place_upper(state, Side.RIGHT)
+        
+            if field == -1:
+                go(state, empty_right)
+                place_lower(state)
+
+
+        go(state, Position(0, Section.INITIAL))
+
+        break
 
 
 '''
+
+while elapsed() < FINISH_TIME:
+
+    if state.goal == Goal.GET_BOX:
+        for p in PICK_UPS:
+            go(state, p)
+            result, direction = pick_up(state)
+            if result:
+                state.goal = Goal.PLACE_BOX_UP if direction else Goal.PLACE_BOX_DOWN
+                break
+
+    if state.goal == Goal.PLACE_BOX_DOWN:
+        if state.section == Section.RIGHT:
+            places = RIGHT_PLACES + LEFT_PLACES
+        else:
+            places = LEFT_PLACES + RIGHT_PLACES
+        for p in places:
+            go(state, p)
+            if place_lower(state):
+                state.goal = Goal.RETURN_TO_INITIAL
+                break
+
+    if state.goal == Goal.RETURN_TO_INITIAL:
+        if elapsed() < THRESHOLD_TIME:
+            state.goal = Goal.GET_BOX
+        else:
+            go(state, INITIAL_PLACE)
+            break
+            
 '''
 
-from machine import Pin
-from utime import sleep
+#rotate_bot_by_set_amount(0.8)
+#rotate_bot_by_set_amount(1.3)
 
-#Set the LED pin and configuration
-led_pin = 2
-led = Pin(led_pin, Pin.OUT)
-led.value(0)
-sleep(1)
-led.value(1)
-sleep(1)
-led.value(0)
-sleep(1)
-led.value(1)
-sleep(1)
-led.value(0)
-sleep(1)
-led.value(1)
-sleep(1)
+#rotate_bot_by_set_amount(2.1)
+#rotate_bot_by_set_amount(0.6)
+#sleep(10)
+#rotate_bot_by_set_amount(1.1)
+#sleep(10)
+#rotate_bot_by_set_amount(1.4)
+#sleep(10)
+#rotate_bot_by_set_amount(1.9)
+#sleep(10)
 
-sleep(100)
-
-'''
-'''
-
-from machine import Pin
-import time
-
-ir = Pin(22, Pin.IN)
-last = ir.value()   
-
-while True:
-    v = ir.value()
-    print(v)
-    if v != last:
-        print(v)
-        last = v
-    time.sleep_us(100)
-'''
-'''
-
-
-servo1.set_angle(270)
-sleep(1)
-
-'''
-
-'''
-
-raise_slowly(servo2, 0, 270)
-sleep(5)
-'''
-
-'''
-
-servo1.set_angle(270)
-sleep(5)
-
-#servo1.set_angle(270)
-#sleep(1)
-
-
-servo1.off()
-servo2.off()
-'''
-'''    
-#servo1.set_angle(80)
-
-#test_positions()
-
-#servo2.set_angle(180)
-'''
-'''
-from machine import Pin
-from utime import sleep
-
-#Set the LED pin and configuration
-led_pin = 28
-led = Pin(led_pin, Pin.OUT)
-
-#Set the button pin
-button_pin = 10
-button = Pin(button_pin, Pin.IN, Pin.PULL_UP)
-
-#Continiously update the LED value and print said value
-while True:
-  led.value(button.value())
-  sleep(0.1)
-  print(button.value())
-
-  
-'''
-'''
-from machine import Pin
-
-# Jumper labels 24-27 = GP18-21 (same mapping as test_input.py: GP18 is labelled 24)
-SENSOR_PINS = [18, 19, 20, 21]
-
-sensors = [Pin(p, Pin.IN, Pin.PULL_DOWN) for p in SENSOR_PINS]
-
-def read_sensors():
-    # Returns the 4 digital readings (0 or 1), in the order of jumper pins 24, 25, 26, 27
-    return [s.value() for s in sensors]
-
-def print_sensors(duration=30, interval=0.1):
-    # Print all 4 readings repeatedly for `duration` seconds
-    start = ticks_ms()
-    while ticks_diff(ticks_ms(), start) < duration * 1000:
-        print(read_sensors())
-        sleep(interval)
-
-
-print_sensors()
-
-'''

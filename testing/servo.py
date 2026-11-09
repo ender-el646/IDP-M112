@@ -1,7 +1,6 @@
 from machine import Pin, PWM
 import time
 
-
 class Servo:
     # Common settings for 270° servos:
     # 0.5 ms → minimum (0°)
@@ -43,12 +42,29 @@ class Servo:
     def off(self):
         self.servo.duty_u16(0)
 
-servo_clamp = Servo(Pin(15)) 
-servo_height = Servo(Pin(13)) 
 
 #servo1 = Servo(Pin(15)) # Connected to Servo 1
 
 
+def set_servo1(angle):
+    servo1.set_angle(angle)
 
 
+def servo1_off():
+    servo1.off()
+
+
+def test_positions():
+    #while True:
+    #    print("Move to 0°")
+    #    set_servo1(0)
+    #    time.sleep(2)
+
+    #    print("Move to 135° (centre)")
+    #    set_servo1(135)
+    #    time.sleep(2)
+
+    #    print("Move to 270°")
+    #    set_servo1(270)
+    #    time.sleep(2)
 

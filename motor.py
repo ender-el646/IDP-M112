@@ -1,9 +1,9 @@
 from machine import Pin, PWM
 from utime import sleep
+from robot_types import Side
 
 FORWARD = 1
 REVERSE = 0
-
 
 class Motor:
     def __init__(self, dirPin, PWMPin):
@@ -29,33 +29,41 @@ class Motor:
 
 
 # Create each motor once so the pins are only set up a single time
-motor3 = Motor(dirPin=4, PWMPin=5)  # Motor 3 is controlled from Motor Driver 2 #1, on GP4/5
-motor4 = Motor(dirPin=7, PWMPin=6)  # Motor 4 is controlled from Motor Driver 2 #2, on GP7/6
+motor_right = Motor(dirPin=7, PWMPin=6)  # Motor 3 is controlled from Motor Driver 2 #1, on GP4/5
+motor_left = Motor(dirPin=4, PWMPin=5)  # Motor 4 is controlled from Motor Driver 2 #2, on GP7/6
 
 
-def set_motor3(direction=FORWARD, speed=100):
-    motor3.set(direction, speed)
+def set_motor_right(direction=FORWARD, speed=100):
+    motor_right.set(direction, speed)
 
 
-def set_motor4(direction=FORWARD, speed=100):
-    motor4.set(direction, speed)
+def set_motor_left(direction=FORWARD, speed=100):
+    motor_left.set(direction, speed)
+
+def set_motor(side: Side, direction=FORWARD, speed=100):
+    
+    if side == Side.RIGHT:
+        set_motor_right(direction, speed)
+    else:
+        set_motor_left(direction, speed)
 
 
-def motor3_off():
-    motor3.off()
+def motor_right_off():
+    motor_right.off()
 
 
-def motor4_off():
-    motor4.off()
+def motor_left_off():
+    motor_left.off()
 
 
 def motors_off():
-    motor3.off()
-    motor4.off()
+    motor_left.off()
+    motor_right.off()
 
+def set_motor_off(side: Side):
 
-if __name__ == "__main__":
-    set_motor3(FORWARD, 50)
-    set_motor4(REVERSE, 75)
-    sleep(2)
-    motors_off()
+    if side == Side.RIGHT:
+        motor_right.off()
+    else:
+        motor_left.off()
+    
